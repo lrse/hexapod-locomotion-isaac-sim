@@ -8,8 +8,8 @@ category = "isaaclab"
 readme  = "README.md"
 
 title = "Hexapod Extension"
-author = tferreyra@icc.fcen.uba.ar
-maintainer = "Isaac Lab Project Developers"
+author = "tferreyra@icc.fcen.uba.ar"
+maintainer = "tferreyra@icc.fcen.uba.ar"
 description="Hexapod Extension for Isaac Lab"
 repository = "https://github.com/lrse/hexapod-locomotion-isaac-sim.git"
 keywords = ["hexapod", "extension", "isaaclab"]

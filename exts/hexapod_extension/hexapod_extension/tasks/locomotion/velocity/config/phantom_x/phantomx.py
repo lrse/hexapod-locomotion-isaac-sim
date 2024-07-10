@@ -44,7 +44,7 @@ SIMPLE_ACTUATOR_CFG = DCMotorCfg(
 
 PHANTOM_X = ArticulationCfg(
     spawn=sim_utils.UsdFileCfg(
-        usd_path=f"/home/tania/Codigos/tests/IsaacLabExtensionTemplate/exts/hexapod_extension/hexapod_extension/tasks/locomotion/velocity/config/anymal_d/phantomx.usd",
+        usd_path=f"/home/tania/Codigos/hexapod-locomotion-isaac-sim/exts/hexapod_extension/hexapod_extension/tasks/locomotion/velocity/config/phantom_x/phantomx.usd",
         activate_contact_sensors=True,
         rigid_props=sim_utils.RigidBodyPropertiesCfg(
             disable_gravity=False,
