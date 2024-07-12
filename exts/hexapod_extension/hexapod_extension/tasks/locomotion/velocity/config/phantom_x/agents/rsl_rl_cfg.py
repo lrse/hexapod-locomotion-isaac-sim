@@ -9,7 +9,7 @@ from omni.isaac.lab_tasks.utils.wrappers.rsl_rl import (
 @configclass
 class PhantomXRoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     num_steps_per_env = 24
-    max_iterations = 1500
+    max_iterations = 3000 #1500
     save_interval = 50
     experiment_name = "phantom_x_rough"
     empirical_normalization = False
@@ -40,7 +40,7 @@ class PhantomXFlatPPORunnerCfg(PhantomXRoughPPORunnerCfg):
     def __post_init__(self):
         super().__post_init__()
 
-        self.max_iterations = 1000
+        self.max_iterations = 2000 #1000
         self.experiment_name = "phantom_x_flat"
         self.policy.actor_hidden_dims = [128, 128, 128]
         self.policy.critic_hidden_dims = [128, 128, 128]

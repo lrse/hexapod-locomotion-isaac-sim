@@ -61,12 +61,13 @@ class MySceneCfg(InteractiveSceneCfg):
     height_scanner = RayCasterCfg(
         prim_path="{ENV_REGEX_NS}/Robot/MP_BODY",
         offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 20.0)),
-        attach_yaw_only=True,
-        pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[1.6, 1.0]),
-        debug_vis=False,
+        attach_yaw_only=True, # We only set yaw to true because we only care about height information
+        pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[1.6, 1.0]), # For a uniform grid pattern, we specify the pattern using GridPatternCfg
+        debug_vis=False, # If True, lets you visualize where the rays hit the mesh
         mesh_prim_paths=["/World/ground"],
     )
-    contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*", history_length=3, track_air_time=True)
+    contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*", history_length=3, track_air_time=True,
+                                      debug_vis=False)#True)
     # lights
     light = AssetBaseCfg(
         prim_path="/World/light",
@@ -92,7 +93,8 @@ class CommandsCfg:
         resampling_time_range=(10.0, 10.0), #Time before commands are changed [s]
         rel_standing_envs=0.02,
         rel_heading_envs=1.0,
-        heading_command=True,
+        heading_command=True, # If True, the angular velocity command is computed from the heading error, 
+                              # where the target heading is sampled uniformly from provided range.
         heading_control_stiffness=0.5,
         debug_vis=True,
         ranges=mdp.UniformVelocityCommandCfg.Ranges(
@@ -136,7 +138,7 @@ class ObservationsCfg:
         )
 
         def __post_init__(self):
-            self.enable_corruption = True # Adds the specified noises
+            self.enable_corruption = False #True #TODO: add noise again# Adds the specified noises if True
             self.concatenate_terms = True
 
     # observation groups
@@ -240,7 +242,7 @@ class RewardsCfg:
             # "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*FOOT"),
             "sensor_cfg": SceneEntityCfg("contact_forces", body_names="tibia_.*"),
             "command_name": "base_velocity",
-            "threshold": 0.5,
+            "threshold": 0.1,#0.5,
         },
     )
     # NOTA: Este término hay que armarlo mejor, porque no sé cómo incluir la tibia sin que sea la pata, 

@@ -41,8 +41,8 @@ PHANTOM_X = ArticulationCfg(
             retain_accelerations=False,
             linear_damping=0.0,
             angular_damping=0.0,
-            max_linear_velocity=100.0,#1000.0,
-            max_angular_velocity=100.0,#1000.0,
+            max_linear_velocity=1000.0,#1000.0,
+            max_angular_velocity=1000.0,#1000.0,
             max_depenetration_velocity=1.0,
         ),
         articulation_props=sim_utils.ArticulationRootPropertiesCfg(
