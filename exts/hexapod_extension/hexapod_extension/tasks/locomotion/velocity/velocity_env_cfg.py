@@ -265,7 +265,7 @@ class TerminationsCfg:
     base_contact = DoneTerm(
         func=mdp.illegal_contact, #Terminate when the contact force on the sensor exceeds the force threshold.
         # params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="base"), "threshold": 1.0},
-        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="MP_BODY"), "threshold": 0.1},
+        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="MP_BODY"), "threshold": 0.5},
         # TODO: verify if the threshold for the contact force is appropriate
     )
 
