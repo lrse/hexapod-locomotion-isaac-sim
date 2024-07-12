@@ -7,7 +7,7 @@ from . import agents, flat_env_cfg, rough_env_cfg
 ##
 
 gym.register(
-    id="Isaac-Velocity-Flat-Phantom-X-v0",#"Template-Isaac-Velocity-Flat-Anymal-D-v0",
+    id="Isaac-Velocity-Flat-Phantom-X-v0",
     entry_point="omni.isaac.lab.envs:ManagerBasedRLEnv",
     disable_env_checker=True,
     kwargs={
@@ -17,7 +17,7 @@ gym.register(
 )
 
 gym.register(
-    id="Template-Isaac-Velocity-Flat-Phantom-X-Play-v0",
+    id="Isaac-Velocity-Flat-Phantom-X-Play-v0",
     entry_point="omni.isaac.lab.envs:ManagerBasedRLEnv",
     disable_env_checker=True,
     kwargs={
@@ -27,7 +27,7 @@ gym.register(
 )
 
 gym.register(
-    id="Template-Isaac-Velocity-Rough-Phantom-X-v0",
+    id="Isaac-Velocity-Rough-Phantom-X-v0",
     entry_point="omni.isaac.lab.envs:ManagerBasedRLEnv",
     disable_env_checker=True,
     kwargs={
@@ -37,7 +37,7 @@ gym.register(
 )
 
 gym.register(
-    id="Template-Isaac-Velocity-Rough-Phantom-X-Play-v0",
+    id="Isaac-Velocity-Rough-Phantom-X-Play-v0",
     entry_point="omni.isaac.lab.envs:ManagerBasedRLEnv",
     disable_env_checker=True,
     kwargs={

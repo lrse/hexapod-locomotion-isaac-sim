@@ -3,19 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""Configuration for the ANYbotics robots.
-
-The following configuration parameters are available:
-
-* :obj:`ANYMAL_B_CFG`: The ANYmal-B robot with ANYdrives 3.0
-* :obj:`ANYMAL_C_CFG`: The ANYmal-C robot with ANYdrives 3.0
-* :obj:`ANYMAL_D_CFG`: The ANYmal-D robot with ANYdrives 3.0
-
-Reference:
-
-* https://github.com/ANYbotics/anymal_b_simple_description
-* https://github.com/ANYbotics/anymal_c_simple_description
-* https://github.com/ANYbotics/anymal_d_simple_description
+"""Configuration for the Phantom X robot.
 
 """
 
@@ -27,6 +15,7 @@ from omni.isaac.lab.assets.articulation import ArticulationCfg
 # Configuration - Actuators.
 ##
 
+# TODO: verificar que los motores estén bien calculados.
 # Del urdf del PhantomX: todos los joints tienen la misma configuración:
 # <limit effort="8.8" lower="-2.6179939" upper="2.6179939" velocity="5.6548668"/>
 SIMPLE_ACTUATOR_CFG = DCMotorCfg(
@@ -46,6 +35,7 @@ PHANTOM_X = ArticulationCfg(
     spawn=sim_utils.UsdFileCfg(
         usd_path=f"/home/tania/Codigos/hexapod-locomotion-isaac-sim/exts/hexapod_extension/hexapod_extension/tasks/locomotion/velocity/config/phantom_x/phantomx.usd",
         activate_contact_sensors=True,
+        # TODO: ver que las propiedades estén bien definidas
         rigid_props=sim_utils.RigidBodyPropertiesCfg(
             disable_gravity=False,
             retain_accelerations=False,
@@ -59,16 +49,10 @@ PHANTOM_X = ArticulationCfg(
             enabled_self_collisions=True, solver_position_iteration_count=4, solver_velocity_iteration_count=0
         ),
         # collision_props=sim_utils.CollisionPropertiesCfg(contact_offset=0.02, rest_offset=0.0),
+        # collision_props can be used to set a margin for contact generation, meaning contact generation can potentially start before the shapes actually penetrate.
     ),
     init_state=ArticulationCfg.InitialStateCfg(
         pos=(0.0, 0.0, 0.193),
-        # joint_pos={
-        #     ".*HAA": 0.0,  # all HAA
-        #     ".*F_HFE": 0.4,  # both front HFE
-        #     ".*H_HFE": -0.4,  # both hind HFE
-        #     ".*F_KFE": -0.8,  # both front KFE
-        #     ".*H_KFE": 0.8,  # both hind KFE
-        # },
     ),
     actuators={"legs": SIMPLE_ACTUATOR_CFG},
     soft_joint_pos_limit_factor=0.95,

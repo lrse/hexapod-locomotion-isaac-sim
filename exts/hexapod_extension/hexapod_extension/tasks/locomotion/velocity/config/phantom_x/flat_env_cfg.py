@@ -9,7 +9,7 @@ class PhantomXFlatEnvCfg(PhantomXRoughEnvCfg):
         # post init of parent
         super().__post_init__()
 
-        # override rewards
+        # override rewards (TODO: rethink this)
         self.rewards.flat_orientation_l2.weight = -5.0
         self.rewards.dof_torques_l2.weight = -2.5e-5
         self.rewards.feet_air_time.weight = 0.5
@@ -33,6 +33,12 @@ class PhantomXFlatEnvCfg_PLAY(PhantomXFlatEnvCfg):
         self.scene.env_spacing = 2.5
         # disable randomization for play
         self.observations.policy.enable_corruption = False
+        # # remove random pushing
+        # self.randomization.base_external_force_torque = None
+        # self.randomization.push_robot = None
+
+        #IMPORTANTE: esto lo tuve que modificar porque me tiraba error, porque randomization era None. No sé por qué saltó este error
         # remove random pushing
-        self.randomization.base_external_force_torque = None
-        self.randomization.push_robot = None
+        if (self.randomization is not None):
+            self.randomization.base_external_force_torque = None
+            self.randomization.push_robot = None

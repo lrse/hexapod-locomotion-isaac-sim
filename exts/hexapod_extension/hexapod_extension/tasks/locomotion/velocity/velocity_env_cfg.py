@@ -44,8 +44,8 @@ class MySceneCfg(InteractiveSceneCfg):
         max_init_terrain_level=5,
         collision_group=-1,
         physics_material=sim_utils.RigidBodyMaterialCfg(
-            friction_combine_mode="multiply",
-            restitution_combine_mode="multiply",
+            friction_combine_mode="multiply", #This parameter defines the friction value to use when objects collide
+            restitution_combine_mode="multiply", #This parameter defines the restitution value to use when objects collide
             static_friction=1.0,
             dynamic_friction=1.0,
         ),
@@ -59,7 +59,7 @@ class MySceneCfg(InteractiveSceneCfg):
     robot: ArticulationCfg = MISSING
     # sensors
     height_scanner = RayCasterCfg(
-        prim_path="{ENV_REGEX_NS}/Robot/base",
+        prim_path="{ENV_REGEX_NS}/Robot/MP_BODY",
         offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 20.0)),
         attach_yaw_only=True,
         pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[1.6, 1.0]),
@@ -89,7 +89,7 @@ class CommandsCfg:
 
     base_velocity = mdp.UniformVelocityCommandCfg(
         asset_name="robot",
-        resampling_time_range=(10.0, 10.0),
+        resampling_time_range=(10.0, 10.0), #Time before commands are changed [s]
         rel_standing_envs=0.02,
         rel_heading_envs=1.0,
         heading_command=True,
@@ -127,7 +127,8 @@ class ObservationsCfg:
         joint_pos = ObsTerm(func=mdp.joint_pos_rel, noise=Unoise(n_min=-0.01, n_max=0.01))
         joint_vel = ObsTerm(func=mdp.joint_vel_rel, noise=Unoise(n_min=-1.5, n_max=1.5))
         actions = ObsTerm(func=mdp.last_action)
-        height_scan = ObsTerm(
+        height_scan = ObsTerm( # Height scan from the given sensor w.r.t. the sensor’s frame.
+                               # The provided offset (Defaults to 0.5) is subtracted from the returned values.
             func=mdp.height_scan,
             params={"sensor_cfg": SceneEntityCfg("height_scanner")},
             noise=Unoise(n_min=-0.1, n_max=0.1),
@@ -135,7 +136,7 @@ class ObservationsCfg:
         )
 
         def __post_init__(self):
-            self.enable_corruption = True
+            self.enable_corruption = True # Adds the specified noises
             self.concatenate_terms = True
 
     # observation groups
@@ -197,7 +198,7 @@ class EventCfg:
     )
 
     reset_robot_joints = EventTerm(
-        func=mdp.reset_joints_by_scale,
+        func=mdp.reset_joints_by_scale, #TODO: since default positions are 0, change this to reset_joints_by_offset
         mode="reset",
         params={
             "position_range": (0.5, 1.5),
@@ -209,7 +210,8 @@ class EventCfg:
     push_robot = EventTerm(
         func=mdp.push_by_setting_velocity,
         mode="interval",
-        interval_range_s=(10.0, 15.0),
+        interval_range_s=(10.0, 15.0), # The range of time in seconds at which the term is applied (sampled uniformly 
+                                       # between the specified range for each environment instance)
         params={"velocity_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5)}},
     )
 
@@ -249,8 +251,8 @@ class RewardsCfg:
     #     params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*THIGH"), "threshold": 1.0},
     # )
     # -- optional penalties
-    flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=0.0)
-    dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=0.0)
+    flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=0.0) # Penalizes the xy-components of the projected gravity vector using L2 norm
+    dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=0.0) # Penalizes joint positions if they cross the soft limits.
 
 
 @configclass
@@ -259,9 +261,10 @@ class TerminationsCfg:
 
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     base_contact = DoneTerm(
-        func=mdp.illegal_contact,
+        func=mdp.illegal_contact, #Terminate when the contact force on the sensor exceeds the force threshold.
         # params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="base"), "threshold": 1.0},
-        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="MP_BODY"), "threshold": 1.0},
+        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="MP_BODY"), "threshold": 0.1},
+        # TODO: verify if the threshold for the contact force is appropriate
     )
 
 
@@ -296,13 +299,17 @@ class LocomotionVelocityRoughEnvCfg(ManagerBasedRLEnvCfg):
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.decimation = 4
-        self.episode_length_s = 20.0
+        self.decimation = 4 # Apply control action every decimation number of simulation steps
+        self.episode_length_s = 20.0 # Duration of an episode (in seconds)
         # simulation settings
-        self.sim.dt = 0.005
+        self.sim.dt = 0.005 # Physics simulation time-step (in seconds)
         self.sim.render_interval = self.decimation
-        self.sim.disable_contact_processing = True
-        self.sim.physics_material = self.scene.terrain.physics_material
+        self.sim.disable_contact_processing = True # This flag allows disabling the contact processing 
+                                                   # and querying the contacts manually by the user over
+                                                   # a limited set of primitives in the scene.
+        self.sim.physics_material = self.scene.terrain.physics_material # Defaults to this physics material for 
+                                                                        # all the rigid body prims that do not 
+                                                                        # have any physics material specified on them.
         # update sensor update periods
         # we tick all the sensors based on the smallest update period (physics update period)
         if self.scene.height_scanner is not None:

@@ -46,10 +46,14 @@ from omni.isaac.lab.utils.io import dump_pickle, dump_yaml
 from omni.isaac.lab_tasks.utils import get_checkpoint_path, parse_env_cfg
 from omni.isaac.lab_tasks.utils.wrappers.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlVecEnvWrapper
 
-torch.backends.cuda.matmul.allow_tf32 = True
-torch.backends.cudnn.allow_tf32 = True
-torch.backends.cudnn.deterministic = False
-torch.backends.cudnn.benchmark = False
+torch.backends.cuda.matmul.allow_tf32 = True # Whether TensorFloat-32 tensor cores may be used in 
+                                             # matrix multiplications on Ampere or newer GPUs.
+                                             # TF32 tensor cores are designed to achieve better 
+                                             # performance on matmul and convolutions on torch.float32 tensors 
+torch.backends.cudnn.allow_tf32 = True # Controls where TensorFloat-32 tensor cores may be used in 
+                                       # cuDNN convolutions on Ampere or newer GPUs. 
+torch.backends.cudnn.deterministic = False # Causes cuDNN to only use deterministic convolution algorithms
+torch.backends.cudnn.benchmark = False # Causes cuDNN to benchmark multiple convolution algorithms and select the fastest.
 
 
 def main():
