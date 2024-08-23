@@ -35,6 +35,12 @@ class PhantomXRoughEnvCfg_PLAY(PhantomXRoughEnvCfg):
 
         # disable randomization for play
         self.observations.policy.enable_corruption = False
+        # # remove random pushing
+        # self.randomization.base_external_force_torque = None
+        # self.randomization.push_robot = None
+
+        #IMPORTANTE: esto lo tuve que modificar porque me tiraba error, porque randomization era None. No sé por qué saltó este error
         # remove random pushing
-        self.randomization.base_external_force_torque = None
-        self.randomization.push_robot = None
+        if (self.randomization is not None):
+            self.randomization.base_external_force_torque = None
+            self.randomization.push_robot = None

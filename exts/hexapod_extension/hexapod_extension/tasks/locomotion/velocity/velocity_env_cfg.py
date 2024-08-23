@@ -24,7 +24,8 @@ from omni.isaac.lab.utils.noise import AdditiveUniformNoiseCfg as Unoise
 ##
 # Pre-defined configs
 ##
-from omni.isaac.lab.terrains.config.rough import ROUGH_TERRAINS_CFG  # isort: skip
+# from omni.isaac.lab.terrains.config.rough import ROUGH_TERRAINS_CFG  # isort: skip
+from .rough import ROUGH_TERRAINS_CFG  # isort: skip
 
 
 ##
@@ -129,13 +130,13 @@ class ObservationsCfg:
         joint_pos = ObsTerm(func=mdp.joint_pos_rel, noise=Unoise(n_min=-0.01, n_max=0.01))
         joint_vel = ObsTerm(func=mdp.joint_vel_rel, noise=Unoise(n_min=-1.5, n_max=1.5))
         actions = ObsTerm(func=mdp.last_action)
-        height_scan = ObsTerm( # Height scan from the given sensor w.r.t. the sensor’s frame.
-                               # The provided offset (Defaults to 0.5) is subtracted from the returned values.
-            func=mdp.height_scan,
-            params={"sensor_cfg": SceneEntityCfg("height_scanner")},
-            noise=Unoise(n_min=-0.1, n_max=0.1),
-            clip=(-1.0, 1.0),
-        )
+        # height_scan = ObsTerm( # Height scan from the given sensor w.r.t. the sensor’s frame.
+        #                        # The provided offset (Defaults to 0.5) is subtracted from the returned values.
+        #     func=mdp.height_scan,
+        #     params={"sensor_cfg": SceneEntityCfg("height_scanner")},
+        #     noise=Unoise(n_min=-0.1, n_max=0.1),
+        #     clip=(-1.0, 1.0),
+        # )
 
         def __post_init__(self):
             self.enable_corruption = False #True #TODO: add noise again# Adds the specified noises if True
@@ -265,7 +266,7 @@ class TerminationsCfg:
     base_contact = DoneTerm(
         func=mdp.illegal_contact, #Terminate when the contact force on the sensor exceeds the force threshold.
         # params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="base"), "threshold": 1.0},
-        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="MP_BODY"), "threshold": 0.5},
+        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="MP_BODY"), "threshold": 1.0},
         # TODO: verify if the threshold for the contact force is appropriate
     )
 
