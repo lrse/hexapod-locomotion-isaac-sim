@@ -1,3 +1,5 @@
+#TODO: add SB3 to all envs
+
 import gymnasium as gym
 
 from . import agents, flat_env_cfg, rough_env_cfg
@@ -33,6 +35,7 @@ gym.register(
     kwargs={
         "env_cfg_entry_point": rough_env_cfg.PhantomXRoughEnvCfg,
         "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.PhantomXRoughPPORunnerCfg,
+        "sb3_cfg_entry_point": f"{agents.__name__}:sb3_ppo_cfg.yaml",
     },
 )
 

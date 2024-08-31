@@ -9,12 +9,12 @@ from omni.isaac.lab_tasks.utils.wrappers.rsl_rl import (
 @configclass
 class PhantomXRoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     num_steps_per_env = 24
-    max_iterations = 1500*4 #1500
+    max_iterations = 10#1500*4 #1500
     save_interval = 50
     experiment_name = "phantom_x_rough"
     empirical_normalization = False
     policy = RslRlPpoActorCriticCfg(
-        class_name="ActorCriticRecurrent",
+        # class_name="ActorCriticRecurrent",
         init_noise_std=1.0,
         actor_hidden_dims=[512, 256, 128],
         critic_hidden_dims=[512, 256, 128],
