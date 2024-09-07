@@ -100,6 +100,7 @@ class CommandsCfg:
         debug_vis=True,
         ranges=mdp.UniformVelocityCommandCfg.Ranges(
             lin_vel_x=(-1.0, 1.0), lin_vel_y=(-1.0, 1.0), ang_vel_z=(-1.0, 1.0), heading=(-math.pi, math.pi)
+            # lin_vel_x=(0, 1.0), lin_vel_y=(0.0, 0.0), ang_vel_z=(0.0, 0.0), heading=(0,0)
         ),
     )
 
@@ -130,13 +131,13 @@ class ObservationsCfg:
         joint_pos = ObsTerm(func=mdp.joint_pos_rel, noise=Unoise(n_min=-0.01, n_max=0.01))
         joint_vel = ObsTerm(func=mdp.joint_vel_rel, noise=Unoise(n_min=-1.5, n_max=1.5))
         actions = ObsTerm(func=mdp.last_action)
-        height_scan = ObsTerm( # Height scan from the given sensor w.r.t. the sensor’s frame.
-                               # The provided offset (Defaults to 0.5) is subtracted from the returned values.
-            func=mdp.height_scan,
-            params={"sensor_cfg": SceneEntityCfg("height_scanner")},
-            noise=Unoise(n_min=-0.1, n_max=0.1),
-            clip=(-1.0, 1.0),
-        )
+        # height_scan = ObsTerm( # Height scan from the given sensor w.r.t. the sensor’s frame.
+        #                        # The provided offset (Defaults to 0.5) is subtracted from the returned values.
+        #     func=mdp.height_scan,
+        #     params={"sensor_cfg": SceneEntityCfg("height_scanner")},
+        #     noise=Unoise(n_min=-0.1, n_max=0.1),
+        #     clip=(-1.0, 1.0),
+        # )
 
         def __post_init__(self):
             self.enable_corruption = False #True #TODO: add noise again# Adds the specified noises if True
@@ -236,16 +237,16 @@ class RewardsCfg:
     dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-1.0e-5)
     dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-7)
     action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-0.01)
-    feet_air_time = RewTerm(
-        func=mdp.feet_air_time,
-        weight=0.125,
-        params={
-            # "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*FOOT"),
-            "sensor_cfg": SceneEntityCfg("contact_forces", body_names="tibia_.*"),
-            "command_name": "base_velocity",
-            "threshold": 0.1,#0.5,
-        },
-    )
+    # feet_air_time = RewTerm(
+    #     func=mdp.feet_air_time,
+    #     weight=0.125,
+    #     params={
+    #         # "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*FOOT"),
+    #         "sensor_cfg": SceneEntityCfg("contact_forces", body_names="tibia_.*"),
+    #         "command_name": "base_velocity",
+    #         "threshold": 0.1,#0.5,
+    #     },
+    # )
     # NOTA: Este término hay que armarlo mejor, porque no sé cómo incluir la tibia sin que sea la pata, 
     # creo que hay que modificar el URDF
     # undesired_contacts = RewTerm(
@@ -255,7 +256,7 @@ class RewardsCfg:
     # )
     # -- optional penalties
     flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=0.0) # Penalizes the xy-components of the projected gravity vector using L2 norm
-    dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=0.0) # Penalizes joint positions if they cross the soft limits.
+    # dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=0.0) # Penalizes joint positions if they cross the soft limits.
 
 
 @configclass
