@@ -5,10 +5,12 @@ import torch
 from omni.isaac.lab.utils import configclass
 from omni.isaac.lab.terrains import TerrainImporterCfg
 from omni.isaac.lab.managers import CurriculumTermCfg as CurrTerm
+from omni.isaac.lab.managers import ObservationTermCfg as ObsTerm
 from omni.isaac.lab.managers import TerminationTermCfg as DoneTerm
 from omni.isaac.lab.managers import SceneEntityCfg
 from omni.isaac.lab.assets import Articulation
 from omni.isaac.lab.envs import ManagerBasedRLEnv
+from omni.isaac.lab.utils.noise import AdditiveUniformNoiseCfg as Unoise
 
 ##
 # Pre-defined configs
@@ -24,11 +26,19 @@ class PhantomXRoughEnvCfg(LocomotionVelocityRoughEnvCfg):
         # switch robot to phantom-x
         self.scene.robot = PHANTOM_X.replace(prim_path="{ENV_REGEX_NS}/Robot")
 
-# @configclass
-# class PhantomXHeightScanRoughEnvCfg(PhantomXRoughEnvCfg):
-#     def __post_init__(self):
-#         # post init of parent
-#         super().__post_init__()
+@configclass
+class PhantomXHeightScanRoughEnvCfg(PhantomXRoughEnvCfg):
+    def __post_init__(self):
+        # post init of parent
+        super().__post_init__()
+        # Add height scan observation term
+        self.observations.policy.height_scan = ObsTerm( # Height scan from the given sensor w.r.t. the sensor's frame.
+                                                            # The provided offset (Defaults to 0.5) is subtracted from the returned values.
+            func=mdp.height_scan,
+            params={"sensor_cfg": SceneEntityCfg("height_scanner")},
+            noise=Unoise(n_min=-0.05, n_max=0.05),
+            clip=(-1.0, 1.0),
+        )
         
 
 @configclass
@@ -121,8 +131,6 @@ class PhantomXRoughEnvCfg_TEST(PhantomXRoughEnvCfg):
         if hasattr(self.curriculum, 'terrain_levels'):
             del self.curriculum.terrain_levels
         self.curriculum.success_analysis = CurrTerm(func=mdp.success_rate)
-        # disable randomization for play
-        self.observations.policy.enable_corruption = False
         # # remove random pushing
         # self.randomization.base_external_force_torque = None
         # self.randomization.push_robot = None
@@ -133,3 +141,19 @@ class PhantomXRoughEnvCfg_TEST(PhantomXRoughEnvCfg):
             self.randomization.base_external_force_torque = None
             self.randomization.push_robot = None
         # TODO: ver cómo queda esto
+
+
+@configclass
+class PhantomXHeightScanRoughEnvCfg_TEST(PhantomXRoughEnvCfg_TEST):
+    def __post_init__(self):
+        # post init of parent
+        super().__post_init__()
+        # Add height scan observation term
+        self.observations.policy.height_scan = ObsTerm( # Height scan from the given sensor w.r.t. the sensor's frame.
+                                                            # The provided offset (Defaults to 0.5) is subtracted from the returned values.
+            func=mdp.height_scan,
+            params={"sensor_cfg": SceneEntityCfg("height_scanner")},
+            noise=Unoise(n_min=-0.05, n_max=0.05),
+            clip=(-1.0, 1.0),
+        )
+        pass

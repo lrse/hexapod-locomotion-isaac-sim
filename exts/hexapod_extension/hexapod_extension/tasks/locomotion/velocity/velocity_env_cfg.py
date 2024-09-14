@@ -158,8 +158,8 @@ class EventCfg:
         mode="startup",
         params={
             "asset_cfg": SceneEntityCfg("robot", body_names=".*"),
-            "static_friction_range": (0.8*0.9, 0.8*1.1),
-            "dynamic_friction_range": (0.6*0.9, 0.6*1.1),
+            "static_friction_range": (0.8, 0.8),#(0.8*0.9, 0.8*1.1),
+            "dynamic_friction_range": (0.6, 0.6),#(0.6*0.9, 0.6*1.1),
             "restitution_range": (0.0, 0.0),
             "num_buckets": 64,
         },
@@ -181,7 +181,7 @@ class EventCfg:
         mode="reset",
         params={
             "asset_cfg": SceneEntityCfg("robot", body_names="MP_BODY"),#"base"),
-            "force_range": (-10.0, 10.0),#(0.0, 0.0),
+            "force_range": (0.0, 0.0),#(-1.0, 1.0),#
             "torque_range": (-0.0, 0.0), #TODO: agregar?
         },
     )
@@ -206,7 +206,7 @@ class EventCfg:
         func=mdp.reset_joints_by_offset, #TODO: since default positions are 0, change this to reset_joints_by_offset
         mode="reset",
         params={
-            "position_range": (-0.5, 0.5),#(0.5, 1.5),
+            "position_range": (-0.0, 0.0),#(-0.5, 0.5),#(0.5, 1.5),
             "velocity_range": (0.0, 0.0),
         },
     )
@@ -217,9 +217,9 @@ class EventCfg:
         mode="interval",
         interval_range_s=(10.0, 15.0), # The range of time in seconds at which the term is applied (sampled uniformly 
                                        # between the specified range for each environment instance)
-        # params={"velocity_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5)}},
+        params={"velocity_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5)}},
         # TODO: ver si se me fue la mano con estos valores (lo dejo entrenando vie a la noche)
-        params={"velocity_range": {"x": (-1.0, 1.0), "y": (-1.0, 1.0)}},
+        # params={"velocity_range": {"x": (-1.0, 1.0), "y": (-1.0, 1.0)}},
     )
 
 

@@ -40,11 +40,11 @@ gym.register(
 )
 
 gym.register(
-    id="Isaac-Velocity-Rough-Phantom-X-HeightScan-v0",
+    id="Isaac-Velocity-Rough-Phantom-X-Height-Scan-v0",
     entry_point="omni.isaac.lab.envs:ManagerBasedRLEnv",
     disable_env_checker=True,
     kwargs={
-        "env_cfg_entry_point": rough_env_cfg.PhantomXRoughEnvCfg,#PhantomXHeightScanRoughEnvCfg,
+        "env_cfg_entry_point": rough_env_cfg.PhantomXHeightScanRoughEnvCfg,
         "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.PhantomXHeightScanRoughPPORunnerCfg,
         "sb3_cfg_entry_point": f"{agents.__name__}:sb3_ppo_cfg.yaml",
     },
@@ -67,5 +67,15 @@ gym.register(
     kwargs={
         "env_cfg_entry_point": rough_env_cfg.PhantomXRoughEnvCfg_TEST,
         "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.PhantomXRoughPPORunnerCfg,
+    },
+)
+
+gym.register(
+    id="Isaac-Velocity-Rough-Phantom-X-Height-Scan-Test-Stairs-v0",
+    entry_point="omni.isaac.lab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": rough_env_cfg.PhantomXHeightScanRoughEnvCfg_TEST,
+        "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.PhantomXHeightScanRoughPPORunnerCfg,
     },
 )
