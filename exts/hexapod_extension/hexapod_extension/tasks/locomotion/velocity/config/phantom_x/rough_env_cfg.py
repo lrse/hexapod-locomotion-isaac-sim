@@ -27,6 +27,15 @@ class PhantomXRoughEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.scene.robot = PHANTOM_X.replace(prim_path="{ENV_REGEX_NS}/Robot")
 
 @configclass
+class PhantomXRoughNoCurriculumEnvCfg(PhantomXRoughEnvCfg):
+    def __post_init__(self):
+        # post init of parent
+        super().__post_init__()
+        self.curriculum = {}
+        # spawn the robot randomly in the grid (instead of their terrain levels)
+        self.scene.terrain.max_init_terrain_level = None
+
+@configclass
 class PhantomXHeightScanRoughEnvCfg(PhantomXRoughEnvCfg):
     def __post_init__(self):
         # post init of parent
@@ -37,6 +46,7 @@ class PhantomXHeightScanRoughEnvCfg(PhantomXRoughEnvCfg):
             func=mdp.height_scan,
             params={"sensor_cfg": SceneEntityCfg("height_scanner")},
             noise=Unoise(n_min=-0.05, n_max=0.05),
+            # noise=Unoise(n_min=-0.01, n_max=0.01),
             clip=(-1.0, 1.0),
         )
         
@@ -154,6 +164,7 @@ class PhantomXHeightScanRoughEnvCfg_TEST(PhantomXRoughEnvCfg_TEST):
             func=mdp.height_scan,
             params={"sensor_cfg": SceneEntityCfg("height_scanner")},
             noise=Unoise(n_min=-0.05, n_max=0.05),
+            # noise=Unoise(n_min=-0.01, n_max=0.01),
             clip=(-1.0, 1.0),
         )
         pass

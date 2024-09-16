@@ -40,6 +40,17 @@ gym.register(
 )
 
 gym.register(
+    id="Isaac-Velocity-Rough-Phantom-X-No-Curriculum-v0",
+    entry_point="omni.isaac.lab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": rough_env_cfg.PhantomXRoughNoCurriculumEnvCfg,
+        "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.PhantomXRoughPPORunnerCfg,
+        "sb3_cfg_entry_point": f"{agents.__name__}:sb3_ppo_cfg.yaml",
+    },
+)
+
+gym.register(
     id="Isaac-Velocity-Rough-Phantom-X-Height-Scan-v0",
     entry_point="omni.isaac.lab.envs:ManagerBasedRLEnv",
     disable_env_checker=True,

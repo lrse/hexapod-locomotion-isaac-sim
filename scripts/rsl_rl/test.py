@@ -124,8 +124,8 @@ def main():
     print(env.env.unwrapped.scene.terrain.terrain_parameter)
 
     # specify directory for logging experiments
-    # log_root_path = os.path.join("logs", "rsl_rl", agent_cfg.experiment_name+"_blind")
-    log_root_path = os.path.join("logs", "rsl_rl", agent_cfg.experiment_name+"_height_scan")
+    log_root_path = os.path.join("logs", "rsl_rl", agent_cfg.experiment_name+"_blind")
+    # log_root_path = os.path.join("logs", "rsl_rl", agent_cfg.experiment_name+"_height_scan")
     log_root_path = os.path.abspath(log_root_path)
     print(f"[INFO] Loading experiment from directory: {log_root_path}")
     resume_path = get_checkpoint_path(log_root_path, agent_cfg.load_run, agent_cfg.load_checkpoint)
@@ -171,11 +171,15 @@ def main():
                     level = env.unwrapped.scene._terrain.terrain_levels[env_id].item()
                     lista[level].append(test_result[env_id])
                 # Calculate the success rate for each level
+                successful = [sublist.count(True) if sublist else 0 for sublist in lista]
                 success_rate = [sublist.count(True) / len(sublist) if sublist else 0 for sublist in lista]
                 total_robots = [len(sublist) if sublist else 0 for sublist in lista]
-                parameters = list(env.unwrapped.scene._terrain.terrain_parameter.flatten())
+                # parameters = list(env.unwrapped.scene._terrain.terrain_parameter.flatten())
+                parameters = env.unwrapped.scene._terrain.terrain_parameter
+                print('# of successful robots: ', successful)
                 print('success_rate: ', success_rate)
                 print('parameters: ', parameters)
+                print('parameters: ', list(parameters[:,0]))
                 print('total_robots: ', total_robots)
                 break
 
