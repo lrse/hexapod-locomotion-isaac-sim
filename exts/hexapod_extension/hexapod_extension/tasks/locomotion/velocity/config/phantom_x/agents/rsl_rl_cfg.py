@@ -11,7 +11,7 @@ class PhantomXRoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     num_steps_per_env = 96#24
     max_iterations = 1500*4*2 #1500
     save_interval = 50
-    experiment_name = "phantom_x_rough"
+    experiment_name = "phantom_x_rough_blind"
     empirical_normalization = False
     policy = RslRlPpoActorCriticCfg(
         class_name="ActorCriticRecurrent",
@@ -37,6 +37,7 @@ class PhantomXRoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
 
 @configclass
 class PhantomXHeightScanRoughPPORunnerCfg(PhantomXRoughPPORunnerCfg):
+    experiment_name = "phantom_x_rough_height_scan"
     policy = RslRlPpoActorCriticCfg(
         class_name="ActorCritic",
         init_noise_std=1.0,

@@ -72,10 +72,18 @@ def main():
         log_dir += f"_{agent_cfg.run_name}"
     log_dir = os.path.join(log_root_path, log_dir)
 
+    # if args_cli.video:
+    #     # adjust camera resolution and pose
+    #     # env_cfg.viewer.resolution = (640, 480)
+    #     env_cfg.viewer.eye = (1.0, 1.0, 1.0)
+    #     env_cfg.viewer.lookat = (0.0, 0.0, 0.0)
+
     # create isaac environment
     env = gym.make(args_cli.task, cfg=env_cfg, render_mode="rgb_array" if args_cli.video else None)
     # wrap for video recording
     if args_cli.video:
+        # Configure camera view through ViewerCfg
+        env_cfg.viewer.origin_type = "asset_root"
         video_kwargs = {
             "video_folder": os.path.join(log_dir, "videos"),
             "step_trigger": lambda step: step % args_cli.video_interval == 0,

@@ -16,7 +16,7 @@ from omni.isaac.lab.utils.noise import AdditiveUniformNoiseCfg as Unoise
 # Pre-defined configs
 ##
 from .phantomx import PHANTOM_X
-from hexapod_extension.tasks.locomotion.velocity.rough import STAIR_TERRAINS_CFG 
+from hexapod_extension.tasks.locomotion.velocity.rough import TEST_TERRAINS_CFG, TEST_ONE_TERRAINS_CFG 
 
 @configclass
 class PhantomXRoughEnvCfg(LocomotionVelocityRoughEnvCfg):
@@ -129,7 +129,7 @@ class PhantomXRoughEnvCfg_TEST(PhantomXRoughEnvCfg):
         self.scene.terrain = TerrainImporterCfg(
             prim_path=self.scene.terrain.prim_path,
             terrain_type=self.scene.terrain.terrain_type,
-            terrain_generator=STAIR_TERRAINS_CFG,
+            terrain_generator=TEST_TERRAINS_CFG,
             max_init_terrain_level=None, # If this is None it takes the maximum possible level
             collision_group=self.scene.terrain.collision_group,
             physics_material=self.scene.terrain.physics_material,
@@ -167,4 +167,67 @@ class PhantomXHeightScanRoughEnvCfg_TEST(PhantomXRoughEnvCfg_TEST):
             # noise=Unoise(n_min=-0.01, n_max=0.01),
             clip=(-1.0, 1.0),
         )
-        pass
+
+
+    
+@configclass
+class PhantomXRoughEnvCfg_TEST_ONE(PhantomXRoughEnvCfg):
+    def __post_init__(self):
+        # post init of parent
+        super().__post_init__()
+
+        # Override command ranges and porcentage of standing envs
+        self.commands.base_velocity.ranges = mdp.UniformVelocityCommandCfg.Ranges(
+            lin_vel_x=(0.5, 0.5), lin_vel_y=(-0.05, 0.05), ang_vel_z=(0.0, 0.0), heading=(0.0, 0.0)
+         )
+        self.commands.base_velocity.rel_standing_envs=0.0
+        # Override resampling_time_range so that the command is not changed during the episode
+        self.commands.base_velocity.resampling_time_range=(self.episode_length_s, self.episode_length_s)
+
+        # Override Base Reset so that it always faces and walks forward from the center
+        self.events.reset_base.params['pose_range']['x'] = (0.0, 0.0)
+        self.events.reset_base.params['pose_range']['y'] = (0.0, 0.0)
+        self.events.reset_base.params['pose_range']['yaw'] = (0.0, 0.0)
+
+        # Override the terrain_generator to use STAIR_TERRAINS_CFG
+        self.scene.terrain = TerrainImporterCfg(
+            prim_path=self.scene.terrain.prim_path,
+            terrain_type=self.scene.terrain.terrain_type,
+            terrain_generator=TEST_ONE_TERRAINS_CFG,
+            max_init_terrain_level=None, # If this is None it takes the maximum possible level
+            collision_group=self.scene.terrain.collision_group,
+            physics_material=self.scene.terrain.physics_material,
+            visual_material=self.scene.terrain.visual_material,
+            debug_vis=self.scene.terrain.debug_vis,
+        )
+        
+        # Remove the attribute 'terrain_levels' from self.curriculum
+        if hasattr(self.curriculum, 'terrain_levels'):
+            del self.curriculum.terrain_levels
+        self.curriculum.success_analysis = CurrTerm(func=mdp.success_rate)
+        # # remove random pushing
+        # self.randomization.base_external_force_torque = None
+        # self.randomization.push_robot = None
+
+        #IMPORTANTE: esto lo tuve que modificar porque me tiraba error, porque randomization era None. No sé por qué saltó este error
+        # remove random pushing
+        if (self.randomization is not None):
+            self.randomization.base_external_force_torque = None
+            self.randomization.push_robot = None
+        # TODO: ver cómo queda esto
+
+
+@configclass
+class PhantomXHeightScanRoughEnvCfg_TEST_ONE(PhantomXRoughEnvCfg_TEST_ONE):
+    def __post_init__(self):
+        # post init of parent
+        super().__post_init__()
+        # Add height scan observation term
+        self.observations.policy.height_scan = ObsTerm( # Height scan from the given sensor w.r.t. the sensor's frame.
+                                                            # The provided offset (Defaults to 0.5) is subtracted from the returned values.
+            func=mdp.height_scan,
+            params={"sensor_cfg": SceneEntityCfg("height_scanner")},
+            noise=Unoise(n_min=-0.05, n_max=0.05),
+            # noise=Unoise(n_min=-0.01, n_max=0.01),
+            clip=(-1.0, 1.0),
+        )

@@ -32,25 +32,21 @@ def feet_air_time(
     return reward
 
 
-def feet_air_time_positive_biped(
+def tripod_gate(
     env: ManagerBasedRLEnv, command_name: str, threshold: float, sensor_cfg: SceneEntityCfg
 ) -> torch.Tensor:
-    """Reward long steps taken by the feet for bipeds.
+    """Reward stances compatible with tripod gate.
 
-    This function rewards the agent for taking steps up to a specified threshold and also keep one foot at
-    a time in the air.
+    This function rewards the agent if it's standing using front and back legs of one side and center 
+    leg of the other, or both.
 
-    If the commands are small (i.e. the agent is not supposed to take a step), then the reward is zero.
     """
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
     # compute the reward
-    air_time = contact_sensor.data.current_air_time[:, sensor_cfg.body_ids]
-    contact_time = contact_sensor.data.current_contact_time[:, sensor_cfg.body_ids]
-    in_contact = contact_time > 0.0
-    in_mode_time = torch.where(in_contact, contact_time, air_time)
-    single_stance = torch.sum(in_contact.int(), dim=1) == 1
-    reward = torch.min(torch.where(single_stance.unsqueeze(-1), in_mode_time, 0.0), dim=1)[0]
-    reward = torch.clamp(reward, max=threshold)
-    # no reward for zero command
-    reward *= torch.norm(env.command_manager.get_command(command_name)[:, :2], dim=1) > 0.1
-    return reward
+    in_contact = {}
+    for idx, leg_idx in enumerate(sensor_cfg.body_ids):
+        force = contact_sensor.data.net_forces_w[:,leg_idx, :]
+        in_contact[sensor_cfg.body_names[idx]] = torch.norm(force, dim=1) > threshold
+    tripod_stance = (in_contact["tibia_rf"] & in_contact["tibia_lm"] & in_contact["tibia_rr"]) \
+                    | (in_contact["tibia_lf"] & in_contact["tibia_rm"] & in_contact["tibia_lr"])
+    return tripod_stance.int()
