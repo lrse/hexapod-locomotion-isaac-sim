@@ -60,19 +60,15 @@ class MySceneCfg(InteractiveSceneCfg):
     robot: ArticulationCfg = MISSING
     # sensors
     height_scanner = RayCasterCfg(
-        prim_path="{ENV_REGEX_NS}/Robot/base_link",
+        prim_path="{ENV_REGEX_NS}/Robot/MP_BODY",
         offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 20.0)),
         attach_yaw_only=True, # We only set yaw to true because we only care about height information
         pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[1.6, 1.0]), # For a uniform grid pattern, we specify the pattern using GridPatternCfg
         debug_vis=False, # If True, lets you visualize where the rays hit the mesh
         mesh_prim_paths=["/World/ground"],
     )
-    contact_forces_base = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/base_link", history_length=3, track_air_time=False,
-                                      debug_vis=False, filter_prim_paths_expr=["/World/ground/terrain"])
     contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*", history_length=3, track_air_time=True,
                                       debug_vis=False)#True)
-    # contact_forces_feet = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/tibia_.*/collisions/mesh_1", history_length=3, track_air_time=True,
-    #                                   debug_vis=False)#True)
     # lights
     light = AssetBaseCfg(
         prim_path="/World/light",
@@ -103,8 +99,8 @@ class CommandsCfg:
         heading_control_stiffness=0.5,
         debug_vis=True,
         ranges=mdp.UniformVelocityCommandCfg.Ranges(
-            # lin_vel_x=(-1.0, 1.0), lin_vel_y=(-1.0, 1.0), ang_vel_z=(-1.0, 1.0), heading=(-math.pi, math.pi)
-            lin_vel_x=(-0.5, 0.5), lin_vel_y=(-0.5, 0.5), ang_vel_z=(-0, 0), heading=(-math.pi, math.pi)
+            lin_vel_x=(-1.0, 1.0), lin_vel_y=(-1.0, 1.0), ang_vel_z=(-1.0, 1.0), heading=(-math.pi, math.pi)
+            # lin_vel_x=(-0.5, 0.5), lin_vel_y=(-0.5, 0.5), ang_vel_z=(-0, 0), heading=(-math.pi, math.pi)
             # lin_vel_x=(-0.5, 0.5), lin_vel_y=(-0.5, 0.5), ang_vel_z=(-0, 0), heading=(-0, 0)
         ),
     )
@@ -166,7 +162,7 @@ class EventCfg:
         func=mdp.randomize_rigid_body_mass,
         mode="startup",
         params={
-            "asset_cfg": SceneEntityCfg("robot", body_names="base_link"),#"base"),
+            "asset_cfg": SceneEntityCfg("robot", body_names="MP_BODY"),#"base"),
             "mass_distribution_params": (0.8, 1.2),#$(-5.0, 5.0),
             "operation": "scale",#"add",
         },
@@ -177,7 +173,7 @@ class EventCfg:
         func=mdp.apply_external_force_torque,
         mode="reset",
         params={
-            "asset_cfg": SceneEntityCfg("robot", body_names="base_link"),#"base"),
+            "asset_cfg": SceneEntityCfg("robot", body_names="MP_BODY"),#"base"),
             "force_range": (0.0, 0.0),#(-1.0, 1.0),#
             "torque_range": (-0.0, 0.0), #TODO: agregar?
         },
@@ -257,21 +253,21 @@ class RewardsCfg:
     # -- optional penalties
     flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=0.0) # Penalizes the xy-components of the projected gravity vector using L2 norm
     # dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=0.0) # Penalizes joint positions if they cross the soft limits.
-    # tripod_gate = RewTerm(
-    #     func=mdp.tripod_gate,
-    #     weight=0.125,
-    #     params={
-    #         "sensor_cfg": SceneEntityCfg("contact_forces", 
-    #                                      body_names=["tibia_rf",
-    #                                                  "tibia_rm",
-    #                                                  "tibia_rr",
-    #                                                  "tibia_lf",
-    #                                                  "tibia_lm",
-    #                                                  "tibia_lr"]),
-    #         "command_name": "base_velocity",
-    #         "threshold": 0.1,#0.5,
-    #     },
-    # )
+    tripod_gate = RewTerm(
+        func=mdp.tripod_gate,
+        weight=0.01,
+        params={
+            "sensor_cfg": SceneEntityCfg("contact_forces", 
+                                         body_names=["foottip_rf",
+                                                     "foottip_rm",
+                                                     "foottip_rr",
+                                                     "foottip_lf",
+                                                     "foottip_lm",
+                                                     "foottip_lr"]),
+            "command_name": "base_velocity",
+            "threshold": 1.0,#0.5,
+        },
+    )
 
 
 @configclass
@@ -279,12 +275,12 @@ class TerminationsCfg:
     """Termination terms for the MDP."""
 
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
-    base_contact = DoneTerm(
-        func=mdp.illegal_contact, #Terminate when the contact force on the sensor exceeds the force threshold.
-        # params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="base"), "threshold": 1.0},
-        params={"sensor_cfg": SceneEntityCfg("contact_forces_base", body_names="base_link"), "threshold": 1.0},
-        # TODO: verify if the threshold for the contact force is appropriate
-    )
+    # base_contact = DoneTerm(
+    #     func=mdp.illegal_contact, #Terminate when the contact force on the sensor exceeds the force threshold.
+    #     # params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="base"), "threshold": 1.0},
+    #     params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="MP_BODY"), "threshold": 1.0},
+    #     # TODO: verify if the threshold for the contact force is appropriate
+    # )
     base_orientation = DoneTerm(
         func=mdp.bad_orientation, #Terminate when the asset's orientation is too far from the desired orientation limits.
         params={"limit_angle": math.pi/2, "asset_cfg": SceneEntityCfg("robot")},
@@ -328,7 +324,7 @@ class LocomotionVelocityRoughEnvCfg(ManagerBasedRLEnvCfg):
         """Post initialization."""
         # general settings
         self.decimation = 4 # Apply control action every decimation number of simulation steps
-        self.episode_length_s = 2*20.0 # Duration of an episode (in seconds)
+        self.episode_length_s = 20.0 # Duration of an episode (in seconds)
         # simulation settings
         self.sim.dt = 0.005 # Physics simulation time-step (in seconds)
         self.sim.render_interval = self.decimation

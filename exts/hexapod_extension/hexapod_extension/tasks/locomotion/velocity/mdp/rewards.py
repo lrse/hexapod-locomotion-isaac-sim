@@ -47,6 +47,6 @@ def tripod_gate(
     for idx, leg_idx in enumerate(sensor_cfg.body_ids):
         force = contact_sensor.data.net_forces_w[:,leg_idx, :]
         in_contact[sensor_cfg.body_names[idx]] = torch.norm(force, dim=1) > threshold
-    tripod_stance = (in_contact["tibia_rf"] & in_contact["tibia_lm"] & in_contact["tibia_rr"]) \
-                    | (in_contact["tibia_lf"] & in_contact["tibia_rm"] & in_contact["tibia_lr"])
+    tripod_stance = (in_contact["foottip_rf"] & in_contact["foottip_lm"] & in_contact["foottip_rr"]) \
+                    | (in_contact["foottip_lf"] & in_contact["foottip_rm"] & in_contact["foottip_lr"])
     return tripod_stance.int()
