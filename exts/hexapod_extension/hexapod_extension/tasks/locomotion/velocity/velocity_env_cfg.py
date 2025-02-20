@@ -67,8 +67,9 @@ class MySceneCfg(InteractiveSceneCfg):
         debug_vis=False, # If True, lets you visualize where the rays hit the mesh
         mesh_prim_paths=["/World/ground"],
     )
-    contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*", history_length=3, track_air_time=True,
-                                      debug_vis=False)#True)
+    # contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*", history_length=3, track_air_time=True,
+    #                                   debug_vis=False)#True)
+    contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*", history_length=3, track_air_time=False)
     # lights
     light = AssetBaseCfg(
         prim_path="/World/light",
@@ -230,7 +231,7 @@ class RewardsCfg:
     # -- penalties
     lin_vel_z_l2 = RewTerm(func=mdp.lin_vel_z_l2, weight=-2.0)
     ang_vel_xy_l2 = RewTerm(func=mdp.ang_vel_xy_l2, weight=-0.05)
-    dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-1.0e-5)
+    dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-1.0e-5)#-1.0e-2)#-1.0e-3)#-1.0e-4)#
     dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-7)
     action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-0.01)
     # feet_air_time = RewTerm(
@@ -248,26 +249,26 @@ class RewardsCfg:
     # undesired_contacts = RewTerm(
     #     func=mdp.undesired_contacts,
     #     weight=-1.0,
-    #     params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*THIGH"), "threshold": 1.0},
+    #     params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=["thigh_.*", "MP_BODY", "tibia_.*"]), "threshold": 1.0},
     # )
     # -- optional penalties
     flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=0.0) # Penalizes the xy-components of the projected gravity vector using L2 norm
     # dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=0.0) # Penalizes joint positions if they cross the soft limits.
-    tripod_gate = RewTerm(
-        func=mdp.tripod_gate,
-        weight=0.01,
-        params={
-            "sensor_cfg": SceneEntityCfg("contact_forces", 
-                                         body_names=["foottip_rf",
-                                                     "foottip_rm",
-                                                     "foottip_rr",
-                                                     "foottip_lf",
-                                                     "foottip_lm",
-                                                     "foottip_lr"]),
-            "command_name": "base_velocity",
-            "threshold": 1.0,#0.5,
-        },
-    )
+    # tripod_gate = RewTerm(
+    #     func=mdp.tripod_gate,
+    #     weight=0.01,
+    #     params={
+    #         "sensor_cfg": SceneEntityCfg("contact_forces", 
+    #                                      body_names=["foottip_rf",
+    #                                                  "foottip_rm",
+    #                                                  "foottip_rr",
+    #                                                  "foottip_lf",
+    #                                                  "foottip_lm",
+    #                                                  "foottip_lr"]),
+    #         "command_name": "base_velocity",
+    #         "threshold": 1.0,#0.5,
+    #     },
+    # )
 
 
 @configclass

@@ -29,7 +29,7 @@
             "request": "launch",
             "justMyCode": false,
             // "args" : ["--task", "Isaac-Velocity-Flat-Phantom-X-v0", "--num_envs", "1024"],//, "--headless"],
-            "args" : ["--task", "Isaac-Velocity-Rough-Phantom-X-v0", "--num_envs", "1024"],//, "--resume", "True", "--video"],//, "--headless"],
+            "args" : ["--task", "Isaac-Velocity-Rough-Phantom-X-v0", "--num_envs", "1024", "--headless"],//, "--resume", "True", "--video"],
             // "args" : ["--task", "Isaac-Velocity-Rough-Phantom-X-No-Curriculum-v0", "--num_envs", "1024"],//, "--resume", "True"],//, "--headless"],
             "program": "${workspaceFolder}/scripts/rsl_rl/train.py",
             "console": "integratedTerminal",
@@ -74,47 +74,20 @@
             "request": "launch",
             "justMyCode": false,
             // "args" : ["--task", "Isaac-Velocity-Flat-Phantom-X-Play-v0", "--num_envs", "32"],
-            "args" : ["--task", "Isaac-Velocity-Rough-Phantom-X-Play-v0", "--num_envs", "32"],
+            "args" : ["--task", "Isaac-Velocity-Rough-Phantom-X-Play-v0", "--num_envs", "32"], //"--load_run", "2024-09-15_20-00-00"],
             "program": "${workspaceFolder}/scripts/rsl_rl/play.py",
             "console": "integratedTerminal",
             "envFile": "${workspaceFolder}/.vscode/.python.env",
         },
-
-        // For script execution inside a Docker
         {
-            "name": "Docker: Current File",
+            "name": "Python: Compare Environment",
             "type": "debugpy",
             "request": "launch",
-            "program": "${file}",
+            "justMyCode": false,
+            "args" : ["--task", "Isaac-Velocity-Rough-Phantom-X-Play-v0", "--num_envs", "4"],
+            "program": "${workspaceFolder}/scripts/rsl_rl/compare.py",
             "console": "integratedTerminal",
             "envFile": "${workspaceFolder}/.vscode/.python.env",
-            "env": {
-                "PYTHONPATH": "${env:PYTHONPATH}:${workspaceFolder}"
-            }
-        },
-        {
-            "name": "Docker: Train Environment",
-            "type": "debugpy",
-            "request": "launch",
-            "args" : ["--task", "Isaac-Velocity-Flat-Phantom-X-v0", "--num_envs", "4096", "--headless"],
-            "program": "${workspaceFolder}/scripts/rsl_rl/train.py",
-            "console": "integratedTerminal",
-            "envFile": "${workspaceFolder}/.vscode/.python.env",
-            "env": {
-                "PYTHONPATH": "${env:PYTHONPATH}:${workspaceFolder}"
-            }
-        },
-        {
-            "name": "Docker: Play Environment",
-            "type": "debugpy",
-            "request": "launch",
-            "args" : ["--task", "Isaac-Velocity-Flat-Phantom-X-Play-v0", "--num_envs", "32"],
-            "program": "${workspaceFolder}/scripts/rsl_rl/play.py",
-            "console": "integratedTerminal",
-            "envFile": "${workspaceFolder}/.vscode/.python.env",
-            "env": {
-                "PYTHONPATH": "${env:PYTHONPATH}:${workspaceFolder}"
-            }
         }
     ]
 }

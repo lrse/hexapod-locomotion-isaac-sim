@@ -15,7 +15,8 @@ This repository provides the codes used to train a phantomx robot to walk on rou
 1. Create a new python virtual env with python 3.10.
 2. Install Isaac Gym and Isaac Lab following the [documentation's instructions](https://isaac-sim.github.io/IsaacLab/source/setup/installation/binaries_installation.html). Make sure to include the installation of rsl_rl.
 3. Clone this repository.
-4. Install python extension hexapod_extension using pip.
+4. Install python extension hexapod_extension using pip. You can do this by executing from the repository's root:
+python -m pip install -e  exts/hexapod_extension/
 
 ## Usage ##
 1. Train:  
