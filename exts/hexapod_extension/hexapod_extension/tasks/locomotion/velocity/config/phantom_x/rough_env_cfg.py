@@ -2,15 +2,15 @@ from hexapod_extension.tasks.locomotion.velocity.velocity_env_cfg import Locomot
 import hexapod_extension.tasks.locomotion.velocity.mdp as mdp
 import torch
 
-from omni.isaac.lab.utils import configclass
-from omni.isaac.lab.terrains import TerrainImporterCfg
-from omni.isaac.lab.managers import CurriculumTermCfg as CurrTerm
-from omni.isaac.lab.managers import ObservationTermCfg as ObsTerm
-from omni.isaac.lab.managers import TerminationTermCfg as DoneTerm
-from omni.isaac.lab.managers import SceneEntityCfg
-from omni.isaac.lab.assets import Articulation
-from omni.isaac.lab.envs import ManagerBasedRLEnv
-from omni.isaac.lab.utils.noise import AdditiveUniformNoiseCfg as Unoise
+from isaaclab.utils import configclass
+from isaaclab.terrains import TerrainImporterCfg
+from isaaclab.managers import CurriculumTermCfg as CurrTerm
+from isaaclab.managers import ObservationTermCfg as ObsTerm
+from isaaclab.managers import TerminationTermCfg as DoneTerm
+from isaaclab.managers import SceneEntityCfg
+from isaaclab.assets import Articulation
+from isaaclab.envs import ManagerBasedRLEnv
+from isaaclab.utils.noise import AdditiveUniformNoiseCfg as Unoise
 
 ##
 # Pre-defined configs
@@ -49,6 +49,16 @@ class PhantomXHeightScanRoughEnvCfg(PhantomXRoughEnvCfg):
             # noise=Unoise(n_min=-0.01, n_max=0.01),
             clip=(-1.0, 1.0),
         )
+
+@configclass
+class PhantomXHIMLocomotionRoughEnvCfg(PhantomXRoughEnvCfg):
+    def __post_init__(self):
+        # post init of parent
+        super().__post_init__()
+
+        # Remove the attribute 'base_lin_vel' from self.observations.policy
+        if hasattr(self.observations.policy, 'base_lin_vel'):
+            del self.observations.policy.base_lin_vel
         
 
 @configclass

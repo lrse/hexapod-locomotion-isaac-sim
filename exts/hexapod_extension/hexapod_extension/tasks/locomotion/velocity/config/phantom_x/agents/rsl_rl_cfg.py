@@ -1,9 +1,5 @@
-from omni.isaac.lab.utils import configclass
-from omni.isaac.lab_tasks.utils.wrappers.rsl_rl import (
-    RslRlOnPolicyRunnerCfg,
-    RslRlPpoActorCriticCfg,
-    RslRlPpoAlgorithmCfg,
-)
+from isaaclab.utils import configclass
+from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlPpoActorCriticCfg, RslRlPpoAlgorithmCfg
 
 
 @configclass
@@ -45,6 +41,18 @@ class PhantomXHeightScanRoughPPORunnerCfg(PhantomXRoughPPORunnerCfg):
         critic_hidden_dims=[512, 256, 128],
         activation="elu",
     )
+
+@configclass
+class PhantomXHIMLocomotionRoughPPORunnerCfg(PhantomXRoughPPORunnerCfg):
+    experiment_name = "phantom_x_rough_him_locomotion"
+    policy = RslRlPpoActorCriticCfg(
+        class_name="HIMActorCritic",
+        init_noise_std=1.0,
+        actor_hidden_dims=[512, 256, 128],
+        critic_hidden_dims=[512, 256, 128],
+        activation="elu",
+    )
+    policy.class_name="HIMActorCritic"
     
 @configclass
 class PhantomXFlatPPORunnerCfg(PhantomXRoughPPORunnerCfg):

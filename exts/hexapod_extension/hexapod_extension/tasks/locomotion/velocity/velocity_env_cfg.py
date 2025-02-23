@@ -5,21 +5,21 @@ from dataclasses import MISSING
 
 import hexapod_extension.tasks.locomotion.velocity.mdp as mdp
 
-import omni.isaac.lab.sim as sim_utils
-from omni.isaac.lab.assets import ArticulationCfg, AssetBaseCfg
-from omni.isaac.lab.envs import ManagerBasedRLEnvCfg
-from omni.isaac.lab.managers import CurriculumTermCfg as CurrTerm
-from omni.isaac.lab.managers import EventTermCfg as EventTerm
-from omni.isaac.lab.managers import ObservationGroupCfg as ObsGroup
-from omni.isaac.lab.managers import ObservationTermCfg as ObsTerm
-from omni.isaac.lab.managers import RewardTermCfg as RewTerm
-from omni.isaac.lab.managers import SceneEntityCfg
-from omni.isaac.lab.managers import TerminationTermCfg as DoneTerm
-from omni.isaac.lab.scene import InteractiveSceneCfg
-from omni.isaac.lab.sensors import ContactSensorCfg, RayCasterCfg, patterns
-from omni.isaac.lab.terrains import TerrainImporterCfg
-from omni.isaac.lab.utils import configclass
-from omni.isaac.lab.utils.noise import AdditiveUniformNoiseCfg as Unoise
+import isaaclab.sim as sim_utils
+from isaaclab.assets import ArticulationCfg, AssetBaseCfg
+from isaaclab.envs import ManagerBasedRLEnvCfg
+from isaaclab.managers import CurriculumTermCfg as CurrTerm
+from isaaclab.managers import EventTermCfg as EventTerm
+from isaaclab.managers import ObservationGroupCfg as ObsGroup
+from isaaclab.managers import ObservationTermCfg as ObsTerm
+from isaaclab.managers import RewardTermCfg as RewTerm
+from isaaclab.managers import SceneEntityCfg
+from isaaclab.managers import TerminationTermCfg as DoneTerm
+from isaaclab.scene import InteractiveSceneCfg
+from isaaclab.sensors import ContactSensorCfg, RayCasterCfg, patterns
+from isaaclab.terrains import TerrainImporterCfg
+from isaaclab.utils import configclass
+from isaaclab.utils.noise import AdditiveUniformNoiseCfg as Unoise
 
 ##
 # Pre-defined configs
@@ -137,9 +137,72 @@ class ObservationsCfg:
         def __post_init__(self):
             self.enable_corruption = True # Adds the specified noises if True
             self.concatenate_terms = True
+            self.history_length = 5 #Number of past observation to store in the observation buffers 
+                                    #for all observation terms in group.
+            self.flatten_history_dim = True #Flag to flatten history-based observation terms to a 2D 
+                                            #(num_env, D) tensor for all observation terms in group.
+
+    @configclass
+    class CriticCfg(ObsGroup):
+        """Observations for critic group (contains privileged information for the critic network).
+        
+        Here me repeat the observation terms in policy, but without noise, and add the height scan 
+        (absent in the blind robot).
+        
+        """
+
+        # observation terms (order preserved)
+        # base linear velocity (needed here in this order for HIM Locomotion)
+        base_lin_vel = ObsTerm(func=mdp.base_lin_vel)
+        # other propioceptive meassurements without error (needed here in this order for HIM Locomotion)
+        base_ang_vel = ObsTerm(func=mdp.base_ang_vel)
+        projected_gravity = ObsTerm(func=mdp.projected_gravity)
+        velocity_commands = ObsTerm(func=mdp.generated_commands, params={"command_name": "base_velocity"})
+        joint_pos = ObsTerm(func=mdp.joint_pos_rel)
+        joint_vel = ObsTerm(func=mdp.joint_vel_rel)
+        actions = ObsTerm(func=mdp.last_action)
+        
+        # Privileged Information
+        height_scan = ObsTerm( # Height scan from the given sensor w.r.t. the sensor's frame.
+                               # The provided offset (Defaults to 0.5) is subtracted from the returned values.
+            func=mdp.height_scan,
+            params={"sensor_cfg": SceneEntityCfg("height_scanner")},
+            # noise=Unoise(n_min=-0.05, n_max=0.05),
+            # # noise=Unoise(n_min=-0.01, n_max=0.01),
+            clip=(-1.0, 1.0),
+        )
+
+        # TODO: expand critic observations.
+        forces = ObsTerm(func=mdp.net_forces,
+                                params={"sensor_cfg": SceneEntityCfg("contact_forces",
+                                                                    body_names=["MP_BODY", "c1_.*", "thigh_.*", "tibia_.*"]),},
+                        )
+        # foot_forces = ObsTerm(func=mdp.net_forces,
+        #                     params={"sensor_cfg": SceneEntityCfg("contact_forces",
+        #                                                         body_names=["tibia_.*"])},
+        #                     )
+        # base_forces = ObsTerm(func=mdp.net_forces,
+        #                         params={"sensor_cfg": SceneEntityCfg("contact_forces",
+        #                                                             body_names=["MP_BODY"]),},
+        #                         )
+        # thigh_contact_states = ObsTerm(func=mdp.contact_states,
+        #                         params={"threshold": 1.0,
+        #                                 "sensor_cfg": SceneEntityCfg("contact_forces",
+        #                                                             body_names=["thigh_.*"]),},
+        #                         )
+        # tibia_contact_states = ObsTerm(func=mdp.contact_states,
+        #                         params={"threshold": 1.0,
+        #                                 "sensor_cfg": SceneEntityCfg("contact_forces",
+        #                                                             body_names=["tibia_.*"]),},
+        #                         )
+
+        def __post_init__(self):
+            self.enable_corruption = False # Adds the specified noises if True
+            self.concatenate_terms = True
 
     # observation groups
     policy: PolicyCfg = PolicyCfg()
+    critic: CriticCfg = CriticCfg() # The name has to be critic for rsl_rl to correctly identify it
 
 
 @configclass

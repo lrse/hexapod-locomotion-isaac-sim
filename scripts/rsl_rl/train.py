@@ -4,7 +4,7 @@
 
 import argparse
 
-from omni.isaac.lab.app import AppLauncher
+from isaaclab.app import AppLauncher
 
 # local imports
 import cli_args  # isort: skip
@@ -14,7 +14,7 @@ parser = argparse.ArgumentParser(description="Train an RL agent with RSL-RL.")
 parser.add_argument("--video", action="store_true", default=False, help="Record videos during training.")
 parser.add_argument("--video_length", type=int, default=200, help="Length of the recorded video (in steps).")
 parser.add_argument("--video_interval", type=int, default=2000, help="Interval between video recordings (in steps).")
-parser.add_argument("--cpu", action="store_true", default=False, help="Use CPU pipeline.")
+# parser.add_argument("--cpu", action="store_true", default=False, help="Use CPU pipeline.")
 parser.add_argument("--num_envs", type=int, default=None, help="Number of environments to simulate.")
 parser.add_argument("--task", type=str, default=None, help="Name of the task.")
 parser.add_argument("--seed", type=int, default=None, help="Seed used for the environment")
@@ -36,15 +36,16 @@ import torch
 from datetime import datetime
 
 from rsl_rl.runners import OnPolicyRunner
+from rsl_rl_modified.runners import HIMOnPolicyRunner
 
 # Import extensions to set up environment tasks
 import hexapod_extension.tasks  # noqa: F401
 
-from omni.isaac.lab.envs import ManagerBasedRLEnvCfg
-from omni.isaac.lab.utils.dict import print_dict
-from omni.isaac.lab.utils.io import dump_pickle, dump_yaml
-from omni.isaac.lab_tasks.utils import get_checkpoint_path, parse_env_cfg
-from omni.isaac.lab_tasks.utils.wrappers.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlVecEnvWrapper
+from isaaclab.envs import ManagerBasedRLEnvCfg
+from isaaclab.utils.dict import print_dict
+from isaaclab.utils.io import dump_pickle, dump_yaml
+from isaaclab_tasks.utils import get_checkpoint_path, parse_env_cfg
+from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlVecEnvWrapper
 
 torch.backends.cuda.matmul.allow_tf32 = True # Whether TensorFloat-32 tensor cores may be used in 
                                              # matrix multiplications on Ampere or newer GPUs.
@@ -59,8 +60,9 @@ torch.backends.cudnn.benchmark = False # Causes cuDNN to benchmark multiple conv
 def main():
     """Train with RSL-RL agent."""
     # parse configuration
-    env_cfg: ManagerBasedRLEnvCfg = parse_env_cfg(args_cli.task, use_gpu=not args_cli.cpu, num_envs=args_cli.num_envs)
     agent_cfg: RslRlOnPolicyRunnerCfg = cli_args.parse_rsl_rl_cfg(args_cli.task, args_cli)
+    env_cfg: ManagerBasedRLEnvCfg = parse_env_cfg(args_cli.task, device=agent_cfg.device, num_envs=args_cli.num_envs)
+    
 
     # specify directory for logging experiments
     log_root_path = os.path.join("logs", "rsl_rl", agent_cfg.experiment_name)
@@ -97,9 +99,16 @@ def main():
     env = RslRlVecEnvWrapper(env)
 
     # create runner from rsl-rl
-    runner = OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
-    # write git state to logs
-    runner.add_git_repo_to_log(__file__)
+    if agent_cfg.experiment_name == "phantom_x_rough_him_locomotion":
+        # For experiments using the strategies in HIM Lomotion we need to use the rsl_rl_modified library
+        agent_cfg.algorithm.class_name = 'HIMPPO' # TODO: see why it gets overwritten if I don't add this
+        env.num_one_step_obs = int(env.unwrapped.observation_manager._group_obs_dim['policy'][0] / env_cfg.observations.policy.history_length)
+        runner = HIMOnPolicyRunner(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
+    else:
+        runner = OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
+        # write git state to logs
+        runner.add_git_repo_to_log(__file__) #TODO: add this to HIMOnPolicyRunner?
+        
     # save resume path before creating a new log_dir
     if agent_cfg.resume:
         # get path to previous checkpoint

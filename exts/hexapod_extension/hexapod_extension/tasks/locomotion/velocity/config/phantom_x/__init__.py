@@ -10,7 +10,7 @@ from . import agents, flat_env_cfg, rough_env_cfg
 
 gym.register(
     id="Isaac-Velocity-Flat-Phantom-X-v0",
-    entry_point="omni.isaac.lab.envs:ManagerBasedRLEnv",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
     disable_env_checker=True,
     kwargs={
         "env_cfg_entry_point": flat_env_cfg.PhantomXFlatEnvCfg,
@@ -20,7 +20,7 @@ gym.register(
 
 gym.register(
     id="Isaac-Velocity-Flat-Phantom-X-Play-v0",
-    entry_point="omni.isaac.lab.envs:ManagerBasedRLEnv",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
     disable_env_checker=True,
     kwargs={
         "env_cfg_entry_point": flat_env_cfg.PhantomXFlatEnvCfg_PLAY,
@@ -30,40 +30,47 @@ gym.register(
 
 gym.register(
     id="Isaac-Velocity-Rough-Phantom-X-v0",
-    entry_point="omni.isaac.lab.envs:ManagerBasedRLEnv",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
     disable_env_checker=True,
     kwargs={
         "env_cfg_entry_point": rough_env_cfg.PhantomXRoughEnvCfg,
         "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.PhantomXRoughPPORunnerCfg,
-        "sb3_cfg_entry_point": f"{agents.__name__}:sb3_ppo_cfg.yaml",
     },
 )
 
 gym.register(
     id="Isaac-Velocity-Rough-Phantom-X-No-Curriculum-v0",
-    entry_point="omni.isaac.lab.envs:ManagerBasedRLEnv",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
     disable_env_checker=True,
     kwargs={
         "env_cfg_entry_point": rough_env_cfg.PhantomXRoughNoCurriculumEnvCfg,
         "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.PhantomXRoughPPORunnerCfg,
-        "sb3_cfg_entry_point": f"{agents.__name__}:sb3_ppo_cfg.yaml",
     },
 )
 
 gym.register(
     id="Isaac-Velocity-Rough-Phantom-X-Height-Scan-v0",
-    entry_point="omni.isaac.lab.envs:ManagerBasedRLEnv",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
     disable_env_checker=True,
     kwargs={
         "env_cfg_entry_point": rough_env_cfg.PhantomXHeightScanRoughEnvCfg,
         "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.PhantomXHeightScanRoughPPORunnerCfg,
-        "sb3_cfg_entry_point": f"{agents.__name__}:sb3_ppo_cfg.yaml",
+    },
+)
+
+gym.register(
+    id="Isaac-Velocity-Rough-Phantom-X-HIMLocomotion",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": rough_env_cfg.PhantomXHIMLocomotionRoughEnvCfg,
+        "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.PhantomXHIMLocomotionRoughPPORunnerCfg,
     },
 )
 
 gym.register(
     id="Isaac-Velocity-Rough-Phantom-X-Play-v0",
-    entry_point="omni.isaac.lab.envs:ManagerBasedRLEnv",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
     disable_env_checker=True,
     kwargs={
         "env_cfg_entry_point": rough_env_cfg.PhantomXRoughEnvCfg_PLAY,
@@ -73,7 +80,7 @@ gym.register(
 
 gym.register(
     id="Isaac-Velocity-Rough-Phantom-X-Test-v0",
-    entry_point="omni.isaac.lab.envs:ManagerBasedRLEnv",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
     disable_env_checker=True,
     kwargs={
         "env_cfg_entry_point": rough_env_cfg.PhantomXRoughEnvCfg_TEST,
@@ -83,7 +90,7 @@ gym.register(
 
 gym.register(
     id="Isaac-Velocity-Rough-Phantom-X-Height-Scan-Test-v0",
-    entry_point="omni.isaac.lab.envs:ManagerBasedRLEnv",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
     disable_env_checker=True,
     kwargs={
         "env_cfg_entry_point": rough_env_cfg.PhantomXHeightScanRoughEnvCfg_TEST,
@@ -93,7 +100,7 @@ gym.register(
 
 gym.register(
     id="Isaac-Velocity-Rough-Phantom-X-Test-One-v0",
-    entry_point="omni.isaac.lab.envs:ManagerBasedRLEnv",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
     disable_env_checker=True,
     kwargs={
         "env_cfg_entry_point": rough_env_cfg.PhantomXRoughEnvCfg_TEST_ONE,
@@ -103,7 +110,7 @@ gym.register(
 
 gym.register(
     id="Isaac-Velocity-Rough-Phantom-X-Height-Scan-Test-One-v0",
-    entry_point="omni.isaac.lab.envs:ManagerBasedRLEnv",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
     disable_env_checker=True,
     kwargs={
         "env_cfg_entry_point": rough_env_cfg.PhantomXHeightScanRoughEnvCfg_TEST_ONE,
