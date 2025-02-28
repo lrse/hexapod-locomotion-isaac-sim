@@ -30,3 +30,5 @@
 
 from .ppo import PPO
 from .him_ppo import HIMPPO
+from .dreamwaq_ppo import DreamWaQPPO
+from .ours_ppo import OursPPO

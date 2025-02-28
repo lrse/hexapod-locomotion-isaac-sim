@@ -24,8 +24,7 @@ from isaaclab.utils.noise import AdditiveUniformNoiseCfg as Unoise
 ##
 # Pre-defined configs
 ##
-# from omni.isaac.lab.terrains.config.rough import ROUGH_TERRAINS_CFG  # isort: skip
-from .rough import ROUGH_TERRAINS_CFG  # isort: skip
+from .rough import ROUGH_TERRAINS_CFG, EXTRA_ROUGH_TERRAINS_CFG  # isort: skip
 
 
 ##
@@ -41,7 +40,7 @@ class MySceneCfg(InteractiveSceneCfg):
     terrain = TerrainImporterCfg(
         prim_path="/World/ground",
         terrain_type="generator",
-        terrain_generator=ROUGH_TERRAINS_CFG,
+        terrain_generator=EXTRA_ROUGH_TERRAINS_CFG,#ROUGH_TERRAINS_CFG,#
         max_init_terrain_level=0,
         collision_group=-1,
         physics_material=sim_utils.RigidBodyMaterialCfg(
@@ -67,8 +66,6 @@ class MySceneCfg(InteractiveSceneCfg):
         debug_vis=False, # If True, lets you visualize where the rays hit the mesh
         mesh_prim_paths=["/World/ground"],
     )
-    # contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*", history_length=3, track_air_time=True,
-    #                                   debug_vis=False)#True)
     contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*", history_length=3, track_air_time=False)
     # lights
     light = AssetBaseCfg(
@@ -123,7 +120,7 @@ class ObservationsCfg:
         """Observations for policy group."""
 
         # observation terms (order preserved)
-        base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.01, n_max=0.01))
+        base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
         base_ang_vel = ObsTerm(func=mdp.base_ang_vel, noise=Unoise(n_min=-0.2, n_max=0.2))
         projected_gravity = ObsTerm(
             func=mdp.projected_gravity,
@@ -137,10 +134,10 @@ class ObservationsCfg:
         def __post_init__(self):
             self.enable_corruption = True # Adds the specified noises if True
             self.concatenate_terms = True
-            self.history_length = 5 #Number of past observation to store in the observation buffers 
-                                    #for all observation terms in group.
-            self.flatten_history_dim = True #Flag to flatten history-based observation terms to a 2D 
-                                            #(num_env, D) tensor for all observation terms in group.
+            # self.history_length = 5 #Number of past observation to store in the observation buffers 
+            #                         #for all observation terms in group.
+            # self.flatten_history_dim = True #Flag to flatten history-based observation terms to a 2D 
+            #                                 #(num_env, D) tensor for all observation terms in group.
 
     @configclass
     class CriticCfg(ObsGroup):
@@ -173,10 +170,10 @@ class ObservationsCfg:
         )
 
         # TODO: expand critic observations.
-        forces = ObsTerm(func=mdp.net_forces,
-                                params={"sensor_cfg": SceneEntityCfg("contact_forces",
-                                                                    body_names=["MP_BODY", "c1_.*", "thigh_.*", "tibia_.*"]),},
-                        )
+        # forces = ObsTerm(func=mdp.net_forces,
+        #                         params={"sensor_cfg": SceneEntityCfg("contact_forces",
+        #                                                             body_names=["MP_BODY", "c1_.*", "thigh_.*", "tibia_.*"]),},
+        #                 )
         # foot_forces = ObsTerm(func=mdp.net_forces,
         #                     params={"sensor_cfg": SceneEntityCfg("contact_forces",
         #                                                         body_names=["tibia_.*"])},
@@ -297,23 +294,6 @@ class RewardsCfg:
     dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-1.0e-5)#-1.0e-2)#-1.0e-3)#-1.0e-4)#
     dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-7)
     action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-0.01)
-    # feet_air_time = RewTerm(
-    #     func=mdp.feet_air_time,
-    #     weight=0.125,
-    #     params={
-    #         # "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*FOOT"),
-    #         "sensor_cfg": SceneEntityCfg("contact_forces", body_names="tibia_.*"),
-    #         "command_name": "base_velocity",
-    #         "threshold": 0.1,#0.5,
-    #     },
-    # )
-    # NOTA: Este término hay que armarlo mejor, porque no sé cómo incluir la tibia sin que sea la pata, 
-    # creo que hay que modificar el URDF
-    # undesired_contacts = RewTerm(
-    #     func=mdp.undesired_contacts,
-    #     weight=-1.0,
-    #     params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=["thigh_.*", "MP_BODY", "tibia_.*"]), "threshold": 1.0},
-    # )
     # -- optional penalties
     flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=0.0) # Penalizes the xy-components of the projected gravity vector using L2 norm
     # dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=0.0) # Penalizes joint positions if they cross the soft limits.

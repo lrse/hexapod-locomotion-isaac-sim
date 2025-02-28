@@ -32,3 +32,7 @@ from .actor_critic import ActorCritic
 from .actor_critic_recurrent import ActorCriticRecurrent
 from .him_actor_critic import HIMActorCritic
 from .him_estimator import HIMEstimator
+from .dreamwaq_actor_critic import DreamWaQActorCritic
+from .dreamwaq_estimator import DreamWaQEstimator
+from .ours_actor_critic import OursActorCritic
+from .ours_estimator import OursEstimator

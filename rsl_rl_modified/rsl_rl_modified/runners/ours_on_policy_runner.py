@@ -36,12 +36,12 @@ import statistics
 from torch.utils.tensorboard import SummaryWriter as TensorboardSummaryWriter
 import torch
 
-from rsl_rl_modified.algorithms import HIMPPO
-from rsl_rl_modified.modules import HIMActorCritic
+from rsl_rl_modified.algorithms import OursPPO
+from rsl_rl_modified.modules import OursActorCritic
 from rsl_rl_modified.env import VecEnv
 
 
-class HIMOnPolicyRunner:
+class OursOnPolicyRunner:
 
     def __init__(self,
                  env: VecEnv,
@@ -49,7 +49,7 @@ class HIMOnPolicyRunner:
                  log_dir=None,
                  device='cpu'):
 
-        self.cfg=train_cfg#["runner"]
+        self.cfg=train_cfg
         self.alg_cfg = train_cfg["algorithm"]
         self.policy_cfg = train_cfg["policy"]
         self.device = device
@@ -60,14 +60,14 @@ class HIMOnPolicyRunner:
             num_critic_obs = self.env.num_obs
         self.num_actor_obs = self.env.num_obs
         self.num_critic_obs = num_critic_obs
-        actor_critic_class = eval(self.policy_cfg.pop("class_name"))  # HIMActorCritic
-        actor_critic: HIMActorCritic = actor_critic_class( self.env.num_obs,
+        actor_critic_class = eval(self.policy_cfg.pop("class_name"))  # OursActorCritic
+        actor_critic: OursActorCritic = actor_critic_class( self.env.num_obs,
                                                         num_critic_obs,
                                                         self.env.num_one_step_obs,
                                                         self.env.num_actions,
                                                         **self.policy_cfg).to(self.device)
-        alg_class = eval(self.alg_cfg.pop("class_name"))  # HIMPPO
-        self.alg: HIMPPO = alg_class(actor_critic, device=self.device, **self.alg_cfg)
+        alg_class = eval(self.alg_cfg.pop("class_name"))  # OursPPO
+        self.alg: OursPPO = alg_class(actor_critic, device=self.device, **self.alg_cfg)
         self.num_steps_per_env = self.cfg["num_steps_per_env"]
         self.save_interval = self.cfg["save_interval"]
 
@@ -159,8 +159,7 @@ class HIMOnPolicyRunner:
                 start = stop
                 self.alg.compute_returns(critic_obs)
                 
-            mean_value_loss, mean_surrogate_loss, mean_estimation_loss, mean_swap_loss = self.alg.update()
-            
+            mean_value_loss, mean_surrogate_loss, mean_estimation_loss, mean_betaVAE_loss, mean_contrast_loss = self.alg.update()
             stop = time.time()
             learn_time = stop - start
             if self.log_dir is not None:
@@ -202,7 +201,8 @@ class HIMOnPolicyRunner:
         self.writer.add_scalar('Loss/value_function', locs['mean_value_loss'], locs['it'])
         self.writer.add_scalar('Loss/surrogate', locs['mean_surrogate_loss'], locs['it'])
         self.writer.add_scalar('Loss/Estimation Loss', locs['mean_estimation_loss'], locs['it'])
-        self.writer.add_scalar('Loss/Swap Loss', locs['mean_swap_loss'], locs['it'])
+        self.writer.add_scalar('Loss/Beta-VAE Loss', locs['mean_betaVAE_loss'], locs['it'])
+        self.writer.add_scalar('Loss/Contrast Loss', locs['mean_contrast_loss'], locs['it'])
         self.writer.add_scalar('Loss/learning_rate', self.alg.learning_rate, locs['it'])
         self.writer.add_scalar('Policy/mean_noise_std', mean_std.item(), locs['it'])
         self.writer.add_scalar('Perf/total_fps', fps, locs['it'])
@@ -224,7 +224,8 @@ class HIMOnPolicyRunner:
                           f"""{'Value function loss:':>{pad}} {locs['mean_value_loss']:.4f}\n"""
                           f"""{'Surrogate loss:':>{pad}} {locs['mean_surrogate_loss']:.4f}\n"""
                           f"""{'Estimation loss:':>{pad}} {locs['mean_estimation_loss']:.4f}\n"""
-                          f"""{'Swap loss:':>{pad}} {locs['mean_swap_loss']:.4f}\n"""
+                          f"""{'Beta-VAE Loss:':>{pad}} {locs['mean_betaVAE_loss']:.4f}\n"""
+                          f"""{'Contrast Loss:':>{pad}} {locs['mean_contrast_loss']:.4f}\n"""
                           f"""{'Mean action noise std:':>{pad}} {mean_std.item():.2f}\n"""
                           f"""{'Mean reward:':>{pad}} {statistics.mean(locs['rewbuffer']):.2f}\n"""
                           f"""{'Mean episode length:':>{pad}} {statistics.mean(locs['lenbuffer']):.2f}\n""")
@@ -238,7 +239,8 @@ class HIMOnPolicyRunner:
                           f"""{'Value function loss:':>{pad}} {locs['mean_value_loss']:.4f}\n"""
                           f"""{'Surrogate loss:':>{pad}} {locs['mean_surrogate_loss']:.4f}\n"""
                           f"""{'Estimation loss:':>{pad}} {locs['mean_estimation_loss']:.4f}\n"""
-                          f"""{'Swap loss:':>{pad}} {locs['mean_swap_loss']:.4f}\n"""
+                          f"""{'Beta-VAE loss:':>{pad}} {locs['mean_betaVAE_loss']:.4f}\n"""
+                          f"""{'Contrast loss:':>{pad}} {locs['mean_contrast_loss']:.4f}\n"""
                           f"""{'Mean action noise std:':>{pad}} {mean_std.item():.2f}\n""")
                         #   f"""{'Mean reward/step:':>{pad}} {locs['mean_reward']:.2f}\n"""
                         #   f"""{'Mean episode length/episode:':>{pad}} {locs['mean_trajectory_length']:.2f}\n""")
@@ -247,12 +249,9 @@ class HIMOnPolicyRunner:
         log_string += (f"""{'-' * width}\n"""
                        f"""{'Total timesteps:':>{pad}} {self.tot_timesteps}\n"""
                        f"""{'Iteration time:':>{pad}} {iteration_time:.2f}s\n"""
-                    #    f"""{'Total time:':>{pad}} {self.tot_time:.2f}s\n"""
-                    #    f"""{'ETA:':>{pad}} {self.tot_time / (locs['it'] + 1) * (
-                    #            locs['num_learning_iterations'] - locs['it']):.1f}s\n""")
-                       f"""{'Total time:':>{pad}} {self.tot_time/3600:.2f} hours\n"""
+                       f"""{'Total time:':>{pad}} {self.tot_time:.2f}s\n"""
                        f"""{'ETA:':>{pad}} {self.tot_time / (locs['it'] + 1) * (
-                               locs['num_learning_iterations'] - locs['it'])/3600:.1f} hours\n""")
+                               locs['num_learning_iterations'] - locs['it']):.1f}s\n""")
         print(log_string)
 
     def save(self, path, infos=None):

@@ -36,7 +36,7 @@ import torch
 from datetime import datetime
 
 from rsl_rl.runners import OnPolicyRunner
-from rsl_rl_modified.runners import HIMOnPolicyRunner
+from rsl_rl_modified.runners import HIMOnPolicyRunner, DreamWaQOnPolicyRunner, OursOnPolicyRunner
 
 # Import extensions to set up environment tasks
 import hexapod_extension.tasks  # noqa: F401
@@ -97,6 +97,24 @@ def main():
         env = gym.wrappers.RecordVideo(env, **video_kwargs)
     # wrap around environment for rsl-rl
     env = RslRlVecEnvWrapper(env)
+    terrain_parameters = env.unwrapped.scene.terrain.terrain_parameter
+    # for lvl in range(terrain_parameters.shape[0]):
+    #     print("Terrain Parameters in lvl ", lvl, ": ", terrain_parameters[lvl,:])
+    from contextlib import redirect_stdout
+
+    with open('logs/terrain_parameters.txt', 'w') as f:
+        with redirect_stdout(f):
+            print("stairs down: ", terrain_parameters[:,0])
+            print("stairs down: ", terrain_parameters[:,1])
+            print("stairs up: ", terrain_parameters[:,2])
+            print("stairs up: ", terrain_parameters[:,3])
+            print("boxes: ", terrain_parameters[:,4])
+            print("boxes: ", terrain_parameters[:,5])
+            # print("random rough: ", terrain_parameters[:,6])
+            # print("random rough: ", terrain_parameters[:,7])
+            print("slope down: ", terrain_parameters[:,8])
+            print("slope up: ", terrain_parameters[:,9])
+
 
     # create runner from rsl-rl
     if agent_cfg.experiment_name == "phantom_x_rough_him_locomotion":
@@ -104,6 +122,15 @@ def main():
         agent_cfg.algorithm.class_name = 'HIMPPO' # TODO: see why it gets overwritten if I don't add this
         env.num_one_step_obs = int(env.unwrapped.observation_manager._group_obs_dim['policy'][0] / env_cfg.observations.policy.history_length)
         runner = HIMOnPolicyRunner(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
+    elif agent_cfg.experiment_name == "phantom_x_rough_dreamwaq":
+        # For experiments using the strategies in DreamWaQ we need to use the rsl_rl_modified library
+        agent_cfg.algorithm.class_name = 'DreamWaQPPO' # TODO: see why it gets overwritten if I don't add this
+        env.num_one_step_obs = int(env.unwrapped.observation_manager._group_obs_dim['policy'][0] / env_cfg.observations.policy.history_length)
+        runner = DreamWaQOnPolicyRunner(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
+    elif agent_cfg.experiment_name == "phantom_x_rough_ours":
+        agent_cfg.algorithm.class_name = 'OursPPO' # TODO: see why it gets overwritten if I don't add this
+        env.num_one_step_obs = int(env.unwrapped.observation_manager._group_obs_dim['policy'][0] / env_cfg.observations.policy.history_length)
+        runner = OursOnPolicyRunner(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
     else:
         runner = OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
         # write git state to logs

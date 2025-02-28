@@ -5,7 +5,7 @@ from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlPpoActorCriticCfg, R
 @configclass
 class PhantomXRoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     num_steps_per_env = 96#24
-    max_iterations = 1500*4*2 #1500
+    max_iterations = 1500*2 #1500
     save_interval = 50
     experiment_name = "phantom_x_rough_blind"
     empirical_normalization = False
@@ -32,6 +32,17 @@ class PhantomXRoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     )
 
 @configclass
+class PhantomXMLPRoughPPORunnerCfg(PhantomXRoughPPORunnerCfg):
+    experiment_name = "phantom_x_rough_blind_mlp"
+    policy = RslRlPpoActorCriticCfg(
+        class_name="ActorCritic",
+        init_noise_std=1.0,
+        actor_hidden_dims=[512, 256, 128],
+        critic_hidden_dims=[512, 256, 128],
+        activation="elu",
+    )
+    
+@configclass
 class PhantomXHeightScanRoughPPORunnerCfg(PhantomXRoughPPORunnerCfg):
     experiment_name = "phantom_x_rough_height_scan"
     policy = RslRlPpoActorCriticCfg(
@@ -52,7 +63,28 @@ class PhantomXHIMLocomotionRoughPPORunnerCfg(PhantomXRoughPPORunnerCfg):
         critic_hidden_dims=[512, 256, 128],
         activation="elu",
     )
-    policy.class_name="HIMActorCritic"
+
+@configclass
+class PhantomXDreamWaQRoughPPORunnerCfg(PhantomXRoughPPORunnerCfg):
+    experiment_name = "phantom_x_rough_dreamwaq"
+    policy = RslRlPpoActorCriticCfg(
+        class_name="DreamWaQActorCritic",
+        init_noise_std=1.0,
+        actor_hidden_dims=[512, 256, 128],
+        critic_hidden_dims=[512, 256, 128],
+        activation="elu",
+    )
+
+@configclass
+class PhantomXOursRoughPPORunnerCfg(PhantomXRoughPPORunnerCfg):
+    experiment_name = "phantom_x_rough_ours"
+    policy = RslRlPpoActorCriticCfg(
+        class_name="OursActorCritic",
+        init_noise_std=1.0,
+        actor_hidden_dims=[512, 256, 128],
+        critic_hidden_dims=[512, 256, 128],
+        activation="elu",
+    )
     
 @configclass
 class PhantomXFlatPPORunnerCfg(PhantomXRoughPPORunnerCfg):

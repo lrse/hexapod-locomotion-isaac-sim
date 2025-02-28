@@ -1,17 +1,16 @@
-"""Script to play a checkpoint if an RL agent from RSL-RL."""
+"""Script to play a checkpoint of an RL agent from RSL-RL."""
 
 """Launch Isaac Sim Simulator first."""
 
 import argparse
 
-from omni.isaac.lab.app import AppLauncher
+from isaaclab.app import AppLauncher
 
 # local imports
 import cli_args  # isort: skip
 
 # add argparse arguments
 parser = argparse.ArgumentParser(description="Train an RL agent with RSL-RL.")
-parser.add_argument("--cpu", action="store_true", default=False, help="Use CPU pipeline.")
 parser.add_argument("--num_envs", type=int, default=None, help="Number of environments to simulate.")
 parser.add_argument("--task", type=str, default=None, help="Name of the task.")
 parser.add_argument("--seed", type=int, default=None, help="Seed used for the environment")
@@ -34,17 +33,15 @@ import os
 import torch
 
 from unittest.mock import patch
-# from omni.isaac.lab.terrains import _generate_curriculum_terrains
-from omni.isaac.lab.terrains.trimesh.mesh_terrains import pyramid_stairs_terrain
-
 
 from rsl_rl.runners import OnPolicyRunner
+from rsl_rl_modified.runners import HIMOnPolicyRunner, DreamWaQOnPolicyRunner, OursOnPolicyRunner
 
 # Import extensions to set up environment tasks
 import hexapod_extension.tasks  # noqa: F401
 
-from omni.isaac.lab_tasks.utils import get_checkpoint_path, parse_env_cfg
-from omni.isaac.lab_tasks.utils.wrappers.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlVecEnvWrapper, export_policy_as_onnx
+from isaaclab_tasks.utils import get_checkpoint_path, parse_env_cfg
+from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlVecEnvWrapper, export_policy_as_onnx
 
 # # Global variable to store the captured step heights
 # terrain_parameter = None
@@ -109,10 +106,10 @@ from omni.isaac.lab_tasks.utils.wrappers.rsl_rl import RslRlOnPolicyRunnerCfg, R
 #     print(f"Captured step heights: {terrain_parameter}")
 
 def main():
-    """Play with RSL-RL agent."""
+    """Test RSL-RL agent."""
     # parse configuration
-    env_cfg = parse_env_cfg(args_cli.task, use_gpu=not args_cli.cpu, num_envs=args_cli.num_envs)
     agent_cfg: RslRlOnPolicyRunnerCfg = cli_args.parse_rsl_rl_cfg(args_cli.task, args_cli)
+    env_cfg = parse_env_cfg(args_cli.task, device=agent_cfg.device, num_envs=args_cli.num_envs)
 
     # # Patch the pyramid_stairs_terrain function to capture step_height
     # with patch('omni.isaac.lab.terrains.trimesh.mesh_terrains.pyramid_stairs_terrain', new=capture_pyramid_stairs_terrain):
@@ -121,27 +118,43 @@ def main():
     
     # wrap around environment for rsl-rl
     env = RslRlVecEnvWrapper(env)
-    print(env.env.unwrapped.scene.terrain.terrain_parameter)
+    print("Terrain Parameters: ", env.env.unwrapped.scene.terrain.terrain_parameter)
 
     # specify directory for logging experiments
-    log_root_path = os.path.join("logs", "rsl_rl", agent_cfg.experiment_name+"_blind")
-    # log_root_path = os.path.join("logs", "rsl_rl", agent_cfg.experiment_name+"_height_scan")
+    log_root_path = os.path.join("logs", "rsl_rl", agent_cfg.experiment_name)
     log_root_path = os.path.abspath(log_root_path)
     print(f"[INFO] Loading experiment from directory: {log_root_path}")
     resume_path = get_checkpoint_path(log_root_path, agent_cfg.load_run, agent_cfg.load_checkpoint)
     print(f"[INFO]: Loading model checkpoint from: {resume_path}")
 
     # load previously trained model
-    ppo_runner = OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=None, device=agent_cfg.device)
-    ppo_runner.load(resume_path)
+    if agent_cfg.experiment_name == "phantom_x_rough_him_locomotion":
+        # For experiments using the strategies in HIM Lomotion we need to use the rsl_rl_modified library
+        agent_cfg.algorithm.class_name = 'HIMPPO' # TODO: see why it gets overwritten if I don't add this
+        env.num_one_step_obs = int(env.unwrapped.observation_manager._group_obs_dim['policy'][0] / env_cfg.observations.policy.history_length)
+        runner = HIMOnPolicyRunner(env, agent_cfg.to_dict(), log_dir=None, device=agent_cfg.device)
+    elif agent_cfg.experiment_name == "phantom_x_rough_dreamwaq":
+        # For experiments using the strategies in DreamWaQ we need to use the rsl_rl_modified library
+        agent_cfg.algorithm.class_name = 'DreamWaQPPO' # TODO: see why it gets overwritten if I don't add this
+        env.num_one_step_obs = int(env.unwrapped.observation_manager._group_obs_dim['policy'][0] / env_cfg.observations.policy.history_length)
+        runner = DreamWaQOnPolicyRunner(env, agent_cfg.to_dict(), log_dir=None, device=agent_cfg.device)
+    elif agent_cfg.experiment_name == "phantom_x_rough_ours":
+        agent_cfg.algorithm.class_name = 'OursPPO' # TODO: see why it gets overwritten if I don't add this
+        env.num_one_step_obs = int(env.unwrapped.observation_manager._group_obs_dim['policy'][0] / env_cfg.observations.policy.history_length)
+        runner = OursOnPolicyRunner(env, agent_cfg.to_dict(), log_dir=None, device=agent_cfg.device)
+    else:
+        runner = OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=None, device=agent_cfg.device)
+        # write git state to logs
+        runner.add_git_repo_to_log(__file__)
+    runner.load(resume_path)
     print(f"[INFO]: Loading model checkpoint from: {resume_path}")
 
     # obtain the trained policy for inference
-    policy = ppo_runner.get_inference_policy(device=env.unwrapped.device)
+    policy = runner.get_inference_policy(device=env.unwrapped.device)
 
     # export policy to onnx
     export_model_dir = os.path.join(os.path.dirname(resume_path), "exported")
-    export_policy_as_onnx(ppo_runner.alg.actor_critic, export_model_dir, filename="policy.onnx")
+    export_policy_as_onnx(runner.alg.actor_critic, export_model_dir, filename="policy.onnx")
 
     # reset environment
     obs, _ = env.get_observations()
@@ -189,6 +202,12 @@ def main():
 
 if __name__ == "__main__":
     # run the main execution
+    # args_cli.task = "Isaac-Velocity-Rough-Phantom-X-HIMLocomotion-Test"
+    # args_cli.load_run = "2025-02-22_21-20-34"
+    # args_cli.task = "Isaac-Velocity-Rough-Phantom-X-DreamWaQ-Test"
+    # args_cli.load_run = "2025-02-26_00-06-59"
+    args_cli.task = "Isaac-Velocity-Rough-Phantom-X-Ours-Test"
+    args_cli.load_run = "2025-02-25_20-05-39"
     main()
     # close sim app
     simulation_app.close()

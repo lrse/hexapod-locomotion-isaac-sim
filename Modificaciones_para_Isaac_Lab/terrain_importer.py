@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2024, The Isaac Lab Project Developers.
+# Copyright (c) 2022-2025, The Isaac Lab Project Developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -13,10 +13,10 @@ from typing import TYPE_CHECKING
 import warp
 from pxr import UsdGeom
 
-import omni.isaac.lab.sim as sim_utils
-from omni.isaac.lab.markers import VisualizationMarkers
-from omni.isaac.lab.markers.config import FRAME_MARKER_CFG
-from omni.isaac.lab.utils.warp import convert_to_warp_mesh
+import isaaclab.sim as sim_utils
+from isaaclab.markers import VisualizationMarkers
+from isaaclab.markers.config import FRAME_MARKER_CFG
+from isaaclab.utils.warp import convert_to_warp_mesh
 
 from .terrain_generator import TerrainGenerator
 from .trimesh.utils import make_plane
@@ -67,6 +67,8 @@ class TerrainImporter:
             ValueError: If terrain type is 'usd' and no configuration provided for ``usd_path``.
             ValueError: If terrain type is 'usd' or 'plane' and no configuration provided for ``env_spacing``.
         """
+        # check that the config is valid
+        cfg.validate()
         # store inputs
         self.cfg = cfg
         self.device = sim_utils.SimulationContext.instance().device  # type: ignore

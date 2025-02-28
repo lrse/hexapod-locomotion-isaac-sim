@@ -32,11 +32,11 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from rsl_rl_modified.modules import HIMActorCritic
+from rsl_rl_modified.modules import OursActorCritic
 from rsl_rl_modified.storage import HIMRolloutStorage
 
-class HIMPPO:
-    actor_critic: HIMActorCritic
+class OursPPO:
+    actor_critic: OursActorCritic
     def __init__(self,
                  actor_critic,
                  num_learning_epochs=1,
@@ -80,7 +80,7 @@ class HIMPPO:
 
     def init_storage(self, num_envs, num_transitions_per_env, actor_obs_shape, critic_obs_shape, action_shape):
         self.storage = HIMRolloutStorage(num_envs, num_transitions_per_env, actor_obs_shape, critic_obs_shape, action_shape, self.device)
-
+        
     def test_mode(self):
         self.actor_critic.test()
     
@@ -120,7 +120,8 @@ class HIMPPO:
         mean_value_loss = 0
         mean_surrogate_loss = 0
         mean_estimation_loss = 0
-        mean_swap_loss = 0
+        mean_betaVAE_loss = 0
+        mean_contrast_loss = 0
         
         generator = self.storage.mini_batch_generator(self.num_mini_batches, self.num_learning_epochs)
 
@@ -150,7 +151,10 @@ class HIMPPO:
                             param_group['lr'] = self.learning_rate
 
                 #Estimator Update
-                estimation_loss, swap_loss = self.actor_critic.estimator.update(obs_batch, next_critic_obs_batch, lr=self.learning_rate)
+                estimation_loss, betaVAE_loss, contrast_loss = self.actor_critic.estimator.update(obs_history=obs_batch, 
+                                                                                                    critic_obs=critic_obs_batch, 
+                                                                                                    next_critic_obs=next_critic_obs_batch, 
+                                                                                                    lr=self.learning_rate)
 
                 # Surrogate loss
                 ratio = torch.exp(actions_log_prob_batch - torch.squeeze(old_actions_log_prob_batch))
@@ -180,15 +184,15 @@ class HIMPPO:
                 mean_value_loss += value_loss.item()
                 mean_surrogate_loss += surrogate_loss.item()
                 mean_estimation_loss += estimation_loss
-                mean_swap_loss += swap_loss
+                mean_betaVAE_loss += betaVAE_loss
+                mean_contrast_loss += contrast_loss
 
         num_updates = self.num_learning_epochs * self.num_mini_batches
         mean_value_loss /= num_updates
         mean_surrogate_loss /= num_updates
         mean_estimation_loss /= num_updates
-        mean_swap_loss /= num_updates
+        mean_betaVAE_loss /= num_updates
+        mean_contrast_loss /= num_updates
         self.storage.clear()
 
-        # return mean_value_loss, mean_surrogate_loss, estimation_loss, swap_loss
-        return mean_value_loss, mean_surrogate_loss, mean_estimation_loss, mean_swap_loss
-        # I think this line had an error and should return the mean losses, not the last losses
+        return mean_value_loss, mean_surrogate_loss, mean_estimation_loss, mean_betaVAE_loss, mean_contrast_loss

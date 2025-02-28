@@ -52,8 +52,11 @@ def terrain_levels_vel(
     move_down *= ~move_up
     # update terrain levels
     terrain.update_env_origins(env_ids, move_up, move_down)
-    # return the mean terrain level (this is done for logging purposes)
-    return torch.mean(terrain.terrain_levels.float())
+    # # return the mean terrain level (this is done for logging purposes)
+    # return torch.mean(terrain.terrain_levels.float())
+    # return the mean and max terrain level (this is done for logging purposes)
+    return {"mean": torch.mean(terrain.terrain_levels.float()), 
+            "max": torch.max(terrain.terrain_levels)}
 
 
 def success_rate(

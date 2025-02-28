@@ -39,6 +39,16 @@ gym.register(
 )
 
 gym.register(
+    id="Isaac-Velocity-Rough-Phantom-X-MLP-v0",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": rough_env_cfg.PhantomXRoughEnvCfg,
+        "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.PhantomXMLPRoughPPORunnerCfg,
+    },
+)
+
+gym.register(
     id="Isaac-Velocity-Rough-Phantom-X-No-Curriculum-v0",
     entry_point="isaaclab.envs:ManagerBasedRLEnv",
     disable_env_checker=True,
@@ -69,6 +79,26 @@ gym.register(
 )
 
 gym.register(
+    id="Isaac-Velocity-Rough-Phantom-X-DreamWaQ",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": rough_env_cfg.PhantomXHIMLocomotionRoughEnvCfg, # The config for HIM Locomotion is the same as needed here
+        "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.PhantomXDreamWaQRoughPPORunnerCfg,
+    },
+)
+
+gym.register(
+    id="Isaac-Velocity-Rough-Phantom-X-Ours",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": rough_env_cfg.PhantomXHIMLocomotionRoughEnvCfg, # The config for HIM Locomotion is the same as needed here
+        "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.PhantomXOursRoughPPORunnerCfg,
+    },
+)
+
+gym.register(
     id="Isaac-Velocity-Rough-Phantom-X-Play-v0",
     entry_point="isaaclab.envs:ManagerBasedRLEnv",
     disable_env_checker=True,
@@ -95,6 +125,36 @@ gym.register(
     kwargs={
         "env_cfg_entry_point": rough_env_cfg.PhantomXHeightScanRoughEnvCfg_TEST,
         "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.PhantomXHeightScanRoughPPORunnerCfg,
+    },
+)
+
+gym.register(
+    id="Isaac-Velocity-Rough-Phantom-X-HIMLocomotion-Test",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": rough_env_cfg.PhantomXHIMLocomotionRoughEnvCfg_TEST,
+        "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.PhantomXHIMLocomotionRoughPPORunnerCfg,
+    },
+)
+
+gym.register(
+    id="Isaac-Velocity-Rough-Phantom-X-DreamWaQ-Test",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": rough_env_cfg.PhantomXHIMLocomotionRoughEnvCfg_TEST, # The config for HIM Locomotion is the same as needed here
+        "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.PhantomXDreamWaQRoughPPORunnerCfg,
+    },
+)
+
+gym.register(
+    id="Isaac-Velocity-Rough-Phantom-X-Ours-Test",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": rough_env_cfg.PhantomXHIMLocomotionRoughEnvCfg_TEST, # The config for HIM Locomotion is the same as needed here
+        "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.PhantomXOursRoughPPORunnerCfg,
     },
 )
 
