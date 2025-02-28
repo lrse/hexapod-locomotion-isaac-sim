@@ -63,6 +63,7 @@ class MySceneCfg(InteractiveSceneCfg):
         offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 20.0)),
         attach_yaw_only=True, # We only set yaw to true because we only care about height information
         pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[1.6, 1.0]), # For a uniform grid pattern, we specify the pattern using GridPatternCfg
+        # pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.75, 0.75]), # For a uniform grid pattern, we specify the pattern using GridPatternCfg
         debug_vis=False, # If True, lets you visualize where the rays hit the mesh
         mesh_prim_paths=["/World/ground"],
     )

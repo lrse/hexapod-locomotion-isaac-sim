@@ -85,6 +85,28 @@ class PhantomXOursRoughPPORunnerCfg(PhantomXRoughPPORunnerCfg):
         critic_hidden_dims=[512, 256, 128],
         activation="elu",
     )
+
+@configclass
+class PhantomXOurs2RoughPPORunnerCfg(PhantomXRoughPPORunnerCfg):
+    experiment_name = "phantom_x_rough_ours2"
+    policy = RslRlPpoActorCriticCfg(
+        class_name="Ours2ActorCritic",
+        init_noise_std=1.0,
+        actor_hidden_dims=[512, 256, 128],
+        critic_hidden_dims=[512, 256, 128],
+        activation="elu",
+    )
+
+@configclass
+class PhantomXOracleRoughPPORunnerCfg(PhantomXRoughPPORunnerCfg):
+    experiment_name = "phantom_x_rough_oracle"
+    policy = RslRlPpoActorCriticCfg(
+        class_name="ActorCritic",
+        init_noise_std=1.0,
+        actor_hidden_dims=[512, 256, 128],
+        critic_hidden_dims=[512, 256, 128],
+        activation="elu",
+    )
     
 @configclass
 class PhantomXFlatPPORunnerCfg(PhantomXRoughPPORunnerCfg):

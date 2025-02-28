@@ -36,3 +36,5 @@ from .dreamwaq_actor_critic import DreamWaQActorCritic
 from .dreamwaq_estimator import DreamWaQEstimator
 from .ours_actor_critic import OursActorCritic
 from .ours_estimator import OursEstimator
+from .ours2_actor_critic import Ours2ActorCritic
+from .ours2_estimator import Ours2Estimator

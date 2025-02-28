@@ -32,3 +32,4 @@ from .on_policy_runner import OnPolicyRunner
 from .him_on_policy_runner import HIMOnPolicyRunner
 from .dreamwaq_on_policy_runner import DreamWaQOnPolicyRunner
 from .ours_on_policy_runner import OursOnPolicyRunner
+from .ours2_on_policy_runner import Ours2OnPolicyRunner

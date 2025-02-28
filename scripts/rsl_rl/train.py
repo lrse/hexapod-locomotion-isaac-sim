@@ -36,7 +36,7 @@ import torch
 from datetime import datetime
 
 from rsl_rl.runners import OnPolicyRunner
-from rsl_rl_modified.runners import HIMOnPolicyRunner, DreamWaQOnPolicyRunner, OursOnPolicyRunner
+from rsl_rl_modified.runners import HIMOnPolicyRunner, DreamWaQOnPolicyRunner, OursOnPolicyRunner, Ours2OnPolicyRunner
 
 # Import extensions to set up environment tasks
 import hexapod_extension.tasks  # noqa: F401
@@ -117,20 +117,21 @@ def main():
 
 
     # create runner from rsl-rl
+    env.num_one_step_obs = int(env.unwrapped.observation_manager._group_obs_dim['policy'][0] / env_cfg.observations.policy.history_length)
     if agent_cfg.experiment_name == "phantom_x_rough_him_locomotion":
         # For experiments using the strategies in HIM Lomotion we need to use the rsl_rl_modified library
         agent_cfg.algorithm.class_name = 'HIMPPO' # TODO: see why it gets overwritten if I don't add this
-        env.num_one_step_obs = int(env.unwrapped.observation_manager._group_obs_dim['policy'][0] / env_cfg.observations.policy.history_length)
         runner = HIMOnPolicyRunner(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
     elif agent_cfg.experiment_name == "phantom_x_rough_dreamwaq":
         # For experiments using the strategies in DreamWaQ we need to use the rsl_rl_modified library
         agent_cfg.algorithm.class_name = 'DreamWaQPPO' # TODO: see why it gets overwritten if I don't add this
-        env.num_one_step_obs = int(env.unwrapped.observation_manager._group_obs_dim['policy'][0] / env_cfg.observations.policy.history_length)
         runner = DreamWaQOnPolicyRunner(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
     elif agent_cfg.experiment_name == "phantom_x_rough_ours":
         agent_cfg.algorithm.class_name = 'OursPPO' # TODO: see why it gets overwritten if I don't add this
-        env.num_one_step_obs = int(env.unwrapped.observation_manager._group_obs_dim['policy'][0] / env_cfg.observations.policy.history_length)
         runner = OursOnPolicyRunner(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
+    elif agent_cfg.experiment_name == "phantom_x_rough_ours2":
+        agent_cfg.algorithm.class_name = 'Ours2PPO' # TODO: see why it gets overwritten if I don't add this
+        runner = Ours2OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
     else:
         runner = OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
         # write git state to logs
