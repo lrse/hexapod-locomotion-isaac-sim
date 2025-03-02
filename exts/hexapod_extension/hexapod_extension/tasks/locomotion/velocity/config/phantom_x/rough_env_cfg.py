@@ -70,11 +70,11 @@ class PhantomXOracleRoughEnvCfg(PhantomXRoughEnvCfg):
         # post init of parent
         super().__post_init__()
 
-        self.observations.critic.history_length = 5 #Number of past observation to store in the observation buffers 
-                                                    #for all observation terms in group.
-        self.observations.critic.flatten_history_dim = True #Flag to flatten history-based observation terms to a 2D 
-                                                            #(num_env, D) tensor for all observation terms in group.
         self.observations.policy = self.observations.critic
+        self.observations.policy.history_length = 5 #Number of past observation to store in the observation buffers 
+                                                    #for all observation terms in group.
+        self.observations.policy.flatten_history_dim = True #Flag to flatten history-based observation terms to a 2D 
+                                                            #(num_env, D) tensor for all observation terms in group.
 
 @configclass
 class PhantomXRoughEnvCfg_PLAY(PhantomXRoughEnvCfg):
@@ -180,7 +180,7 @@ class PhantomXRoughEnvCfg_TEST(PhantomXRoughEnvCfg):
         add_TEST_parameters(self)
 
 @configclass
-class PhantomXHIMLocomotionRoughEnvCfg_TEST(PhantomXRoughEnvCfg):
+class PhantomXHIMLocomotionRoughEnvCfg_TEST(PhantomXRoughEnvCfg_TEST):
     def __post_init__(self):
         # post init of parent
         super().__post_init__()

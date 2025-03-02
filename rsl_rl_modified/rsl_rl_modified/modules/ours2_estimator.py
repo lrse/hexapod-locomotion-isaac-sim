@@ -17,7 +17,7 @@ class Ours2Estimator(nn.Module):
                  critic_latent_dim=32,
                  enc_hidden_dims=[128, 64],
                  tar_hidden_dims=[128, 64],
-                 critic_enc_hidden_dims=[128, 64],
+                 critic_enc_hidden_dims=[128],#, 64],
                  pred_hidden_dims=[64],
                  activation='elu',
                  learning_rate=1e-3,
@@ -65,7 +65,7 @@ class Ours2Estimator(nn.Module):
         # Critic Encoder (Privileged Information Encoder)
         critic_enc_input_dim = self.num_critic_obs
         critic_enc_layers = []
-        for l in range(len(critic_enc_hidden_dims) - 1):
+        for l in range(len(critic_enc_hidden_dims)):
             critic_enc_layers += [nn.Linear(critic_enc_input_dim, critic_enc_hidden_dims[l]), activation]
             critic_enc_input_dim = critic_enc_hidden_dims[l]
         critic_enc_layers += [nn.Linear(critic_enc_input_dim, critic_latent_dim)]

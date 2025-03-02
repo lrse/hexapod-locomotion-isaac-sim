@@ -35,7 +35,7 @@ import torch
 from unittest.mock import patch
 
 from rsl_rl.runners import OnPolicyRunner
-from rsl_rl_modified.runners import HIMOnPolicyRunner, DreamWaQOnPolicyRunner, OursOnPolicyRunner
+from rsl_rl_modified.runners import HIMOnPolicyRunner, DreamWaQOnPolicyRunner, OursOnPolicyRunner, Ours4OnPolicyRunner
 
 # Import extensions to set up environment tasks
 import hexapod_extension.tasks  # noqa: F401
@@ -142,13 +142,16 @@ def main():
         agent_cfg.algorithm.class_name = 'OursPPO' # TODO: see why it gets overwritten if I don't add this
         env.num_one_step_obs = int(env.unwrapped.observation_manager._group_obs_dim['policy'][0] / env_cfg.observations.policy.history_length)
         runner = OursOnPolicyRunner(env, agent_cfg.to_dict(), log_dir=None, device=agent_cfg.device)
+    elif agent_cfg.experiment_name == "phantom_x_rough_ours4":
+        agent_cfg.algorithm.class_name = 'Ours4PPO' # TODO: see why it gets overwritten if I don't add this
+        env.num_one_step_obs = int(env.unwrapped.observation_manager._group_obs_dim['policy'][0] / env_cfg.observations.policy.history_length)
+        runner = Ours4OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=None, device=agent_cfg.device)
     else:
         runner = OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=None, device=agent_cfg.device)
         # write git state to logs
         runner.add_git_repo_to_log(__file__)
     runner.load(resume_path)
-    print(f"[INFO]: Loading model checkpoint from: {resume_path}")
-
+    
     # obtain the trained policy for inference
     policy = runner.get_inference_policy(device=env.unwrapped.device)
 
@@ -190,9 +193,9 @@ def main():
                 # parameters = list(env.unwrapped.scene._terrain.terrain_parameter.flatten())
                 parameters = env.unwrapped.scene._terrain.terrain_parameter
                 print('# of successful robots: ', successful)
-                print('success_rate: ', success_rate)
                 print('parameters: ', parameters)
                 print('parameters: ', list(parameters[:,0]))
+                print('success_rate: ', success_rate)
                 print('total_robots: ', total_robots)
                 break
 
@@ -202,12 +205,13 @@ def main():
 
 if __name__ == "__main__":
     # run the main execution
-    # args_cli.task = "Isaac-Velocity-Rough-Phantom-X-HIMLocomotion-Test"
+    args_cli.task = "Isaac-Velocity-Rough-Phantom-X-HIMLocomotion-Test"
     # args_cli.load_run = "2025-02-22_21-20-34"
     # args_cli.task = "Isaac-Velocity-Rough-Phantom-X-DreamWaQ-Test"
     # args_cli.load_run = "2025-02-26_00-06-59"
-    args_cli.task = "Isaac-Velocity-Rough-Phantom-X-Ours-Test"
-    args_cli.load_run = "2025-02-25_20-05-39"
+    # args_cli.task = "Isaac-Velocity-Rough-Phantom-X-Ours-Test"
+    # args_cli.load_run = "2025-02-25_20-05-39"
+    # args_cli.task = "Isaac-Velocity-Rough-Phantom-X-Ours4-Test"
     main()
     # close sim app
     simulation_app.close()

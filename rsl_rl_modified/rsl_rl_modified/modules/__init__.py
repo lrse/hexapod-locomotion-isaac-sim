@@ -38,3 +38,7 @@ from .ours_actor_critic import OursActorCritic
 from .ours_estimator import OursEstimator
 from .ours2_actor_critic import Ours2ActorCritic
 from .ours2_estimator import Ours2Estimator
+from .ours3_actor_critic import Ours3ActorCritic
+from .ours3_estimator import Ours3Estimator
+from .ours4_actor_critic import Ours4ActorCritic
+from .ours4_estimator import Ours4Estimator

@@ -98,6 +98,28 @@ class PhantomXOurs2RoughPPORunnerCfg(PhantomXRoughPPORunnerCfg):
     )
 
 @configclass
+class PhantomXOurs3RoughPPORunnerCfg(PhantomXRoughPPORunnerCfg):
+    experiment_name = "phantom_x_rough_ours3"
+    policy = RslRlPpoActorCriticCfg(
+        class_name="Ours3ActorCritic",
+        init_noise_std=1.0,
+        actor_hidden_dims=[512, 256, 128],
+        critic_hidden_dims=[512, 256, 128],
+        activation="elu",
+    )
+
+@configclass
+class PhantomXOurs4RoughPPORunnerCfg(PhantomXRoughPPORunnerCfg):
+    experiment_name = "phantom_x_rough_ours4"
+    policy = RslRlPpoActorCriticCfg(
+        class_name="Ours4ActorCritic",
+        init_noise_std=1.0,
+        actor_hidden_dims=[512, 256, 128],
+        critic_hidden_dims=[512, 256, 128],
+        activation="elu",
+    )
+
+@configclass
 class PhantomXOracleRoughPPORunnerCfg(PhantomXRoughPPORunnerCfg):
     experiment_name = "phantom_x_rough_oracle"
     policy = RslRlPpoActorCriticCfg(

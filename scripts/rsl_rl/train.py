@@ -36,7 +36,7 @@ import torch
 from datetime import datetime
 
 from rsl_rl.runners import OnPolicyRunner
-from rsl_rl_modified.runners import HIMOnPolicyRunner, DreamWaQOnPolicyRunner, OursOnPolicyRunner, Ours2OnPolicyRunner
+from rsl_rl_modified.runners import HIMOnPolicyRunner, DreamWaQOnPolicyRunner, OursOnPolicyRunner, Ours2OnPolicyRunner, Ours3OnPolicyRunner, Ours4OnPolicyRunner
 
 # Import extensions to set up environment tasks
 import hexapod_extension.tasks  # noqa: F401
@@ -132,6 +132,12 @@ def main():
     elif agent_cfg.experiment_name == "phantom_x_rough_ours2":
         agent_cfg.algorithm.class_name = 'Ours2PPO' # TODO: see why it gets overwritten if I don't add this
         runner = Ours2OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
+    elif agent_cfg.experiment_name == "phantom_x_rough_ours3":
+        agent_cfg.algorithm.class_name = 'Ours3PPO' # TODO: see why it gets overwritten if I don't add this
+        runner = Ours3OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
+    elif agent_cfg.experiment_name == "phantom_x_rough_ours4":
+        agent_cfg.algorithm.class_name = 'Ours4PPO' # TODO: see why it gets overwritten if I don't add this
+        runner = Ours4OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
     else:
         runner = OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
         # write git state to logs

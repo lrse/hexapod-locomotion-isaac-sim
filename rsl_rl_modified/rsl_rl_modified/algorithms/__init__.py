@@ -33,3 +33,5 @@ from .him_ppo import HIMPPO
 from .dreamwaq_ppo import DreamWaQPPO
 from .ours_ppo import OursPPO
 from .ours2_ppo import Ours2PPO
+from .ours3_ppo import Ours3PPO
+from .ours4_ppo import Ours4PPO

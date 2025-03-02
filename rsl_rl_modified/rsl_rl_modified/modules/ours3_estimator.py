@@ -8,7 +8,7 @@ import torch.distributions as torchd
 from torch.distributions import Normal, Categorical
 
 
-class OursEstimator(nn.Module):
+class Ours3Estimator(nn.Module):
     def __init__(self,
                  temporal_steps,
                  num_one_step_obs,
@@ -16,29 +16,28 @@ class OursEstimator(nn.Module):
                  latent_dim=16,
                  critic_latent_dim=32,
                  enc_hidden_dims=[128, 64],
-                 dec_hidden_dims=[64, 128],
+                 tar_hidden_dims=[128, 64],
                  critic_enc_hidden_dims=[128],#, 64],
+                 prop_pred_hidden_dims=[64],
                  pred_hidden_dims=[64],
                  activation='elu',
                  learning_rate=1e-3,
                  max_grad_norm=10.0,
-                 beta=10,
                  init_noise_std=1.0,
                  **kwargs):
         if kwargs:
             print("Estimator_CL.__init__ got unexpected arguments, which will be ignored: " + str(
                 [key for key in kwargs.keys()]))
-        super(OursEstimator, self).__init__()
+        super(Ours3Estimator, self).__init__()
         activation = get_activation(activation)
 
         self.temporal_steps = temporal_steps
         self.num_one_step_obs = num_one_step_obs
         self.num_critic_obs = num_critic_obs
         self.max_grad_norm = max_grad_norm
-        self.beta = beta
         self.latent_dim = latent_dim
         self.critic_latent_dim = critic_latent_dim
-
+        
         # Encoder
         enc_input_dim = self.temporal_steps * self.num_one_step_obs
         enc_output_dim = 3 + latent_dim + critic_latent_dim # vel + observation latent vector + privileged information latent vector
@@ -49,14 +48,14 @@ class OursEstimator(nn.Module):
         enc_layers += [nn.Linear(enc_input_dim, enc_output_dim)]
         self.encoder = nn.Sequential(*enc_layers)
 
-        # Decoder
-        dec_input_dim = 3 + latent_dim
-        dec_layers = []
-        for l in range(len(dec_hidden_dims)):
-            dec_layers += [nn.Linear(dec_input_dim, dec_hidden_dims[l]), activation]
-            dec_input_dim = dec_hidden_dims[l]
-        dec_layers += [nn.Linear(dec_input_dim, self.num_one_step_obs)]
-        self.decoder = nn.Sequential(*dec_layers)
+        # Target
+        tar_input_dim = self.num_one_step_obs
+        tar_layers = []
+        for l in range(len(tar_hidden_dims)):
+            tar_layers += [nn.Linear(tar_input_dim, tar_hidden_dims[l]), activation]
+            tar_input_dim = tar_hidden_dims[l]
+        tar_layers += [nn.Linear(tar_input_dim, latent_dim)]
+        self.target = nn.Sequential(*tar_layers)
 
         # Critic Encoder (Privileged Information Encoder)
         critic_enc_input_dim = self.num_critic_obs
@@ -67,7 +66,16 @@ class OursEstimator(nn.Module):
         critic_enc_layers += [nn.Linear(critic_enc_input_dim, critic_latent_dim)]
         self.critic_encoder = nn.Sequential(*critic_enc_layers)
 
-        # Predictor
+        # Propioceptive Observation Predictor
+        prop_pred_input_dim = latent_dim
+        prop_pred_layers = []
+        for l in range(len(prop_pred_hidden_dims)):
+            prop_pred_layers += [nn.Linear(prop_pred_input_dim, prop_pred_hidden_dims[l]), activation]
+            prop_pred_input_dim = prop_pred_hidden_dims[l]
+        prop_pred_layers += [nn.Linear(prop_pred_input_dim, latent_dim)]
+        self.propioceptive_predictor = nn.Sequential(*prop_pred_layers)
+
+        # Privileged Info Predictor
         pred_input_dim = critic_latent_dim
         pred_layers = []
         for l in range(len(pred_hidden_dims)):
@@ -115,33 +123,37 @@ class OursEstimator(nn.Module):
         next_obs = next_critic_obs.detach()[:, 3:self.num_one_step_obs+3]
 
         z = self.enc(obs_history)
-        mu = self.encoder_mean
-        sigma = self.encoder_std
-        pred_next_obs = self.decoder(z[..., :self.latent_dim+3])
-        pred_vel, latent, z_c = z[..., :3], z[..., 3:self.latent_dim+3], z[..., self.latent_dim+3:]
+        pred_vel, z_s, z_c = z[..., :3], z[..., 3:self.latent_dim+3], z[..., self.latent_dim+3:]
 
+        # Propioceptive Contrast Loss
+        z_next_obs = self.target(next_obs)
+        p_next_obs = self.propioceptive_predictor(z_next_obs)
+        p_s = self.propioceptive_predictor(z_s)
+        # Calculate negative cosine similarities:
+        propioceptive_contrast_loss = -(cosine_similarity(p_s, z_next_obs.detach()).mean() + 
+                                        cosine_similarity(p_next_obs, z_s.detach()).mean()) * 0.5
+
+        # Contrast Loss
         z_critic = self.critic_encoder(critic_obs)
         p_c = self.predictor(z_c)
         p_critic = self.predictor(z_critic)
         # Calculate negative cosine similarities:
-        def cosine_similarity(pi, zj):
-            return F.normalize(pi, dim=-1, p=2) * F.normalize(zj, dim=-1, p=2)
         contrast_loss = -(cosine_similarity(p_c, z_critic.detach()).mean() + cosine_similarity(p_critic, z_c.detach()).mean()) * 0.5
-
-        # Calculate Kullback-Leibler Divergence
-        DKL = torch.sum(mu*mu + sigma*sigma -1 - 2*torch.log(sigma))/2
-        betaVAE_loss = F.mse_loss(pred_next_obs, next_obs) + self.beta * DKL
         
+        # Estimation Loss
         estimation_loss = F.mse_loss(pred_vel, vel)
         
-        losses = estimation_loss + betaVAE_loss + contrast_loss
+        losses = estimation_loss + propioceptive_contrast_loss + contrast_loss
 
         self.optimizer.zero_grad()
         losses.backward()
         nn.utils.clip_grad_norm_(self.parameters(), self.max_grad_norm)
         self.optimizer.step()
 
-        return estimation_loss.item(), betaVAE_loss.item(), contrast_loss.item()
+        return estimation_loss.item(), propioceptive_contrast_loss.item(), contrast_loss.item()
+
+def cosine_similarity(pi, zj):
+    return F.normalize(pi, dim=-1, p=2) * F.normalize(zj, dim=-1, p=2)
 
 def get_activation(act_name):
     if act_name == "elu":
