@@ -35,3 +35,5 @@ from .ours_on_policy_runner import OursOnPolicyRunner
 from .ours2_on_policy_runner import Ours2OnPolicyRunner
 from .ours3_on_policy_runner import Ours3OnPolicyRunner
 from .ours4_on_policy_runner import Ours4OnPolicyRunner
+from .ours5_on_policy_runner import Ours5OnPolicyRunner
+from .ours6_on_policy_runner import Ours6OnPolicyRunner

@@ -12,8 +12,8 @@ import cli_args  # isort: skip
 # add argparse arguments
 parser = argparse.ArgumentParser(description="Train an RL agent with RSL-RL.")
 parser.add_argument("--video", action="store_true", default=False, help="Record videos during training.")
-parser.add_argument("--video_length", type=int, default=200, help="Length of the recorded video (in steps).")
-parser.add_argument("--video_interval", type=int, default=2000, help="Interval between video recordings (in steps).")
+parser.add_argument("--video_length", type=int, default=800, help="Length of the recorded video (in steps).")
+parser.add_argument("--video_interval", type=int, default=800, help="Interval between video recordings (in steps).")
 # parser.add_argument("--cpu", action="store_true", default=False, help="Use CPU pipeline.")
 parser.add_argument("--num_envs", type=int, default=None, help="Number of environments to simulate.")
 parser.add_argument("--task", type=str, default=None, help="Name of the task.")
@@ -35,8 +35,8 @@ import os
 import torch
 from datetime import datetime
 
-from rsl_rl.runners import OnPolicyRunner
-from rsl_rl_modified.runners import HIMOnPolicyRunner, DreamWaQOnPolicyRunner, OursOnPolicyRunner, Ours2OnPolicyRunner, Ours3OnPolicyRunner, Ours4OnPolicyRunner
+# from rsl_rl.runners import OnPolicyRunner
+from rsl_rl_modified.runners import OnPolicyRunner, HIMOnPolicyRunner, DreamWaQOnPolicyRunner, OursOnPolicyRunner, Ours2OnPolicyRunner, Ours3OnPolicyRunner, Ours4OnPolicyRunner, Ours5OnPolicyRunner, Ours6OnPolicyRunner
 
 # Import extensions to set up environment tasks
 import hexapod_extension.tasks  # noqa: F401
@@ -63,11 +63,14 @@ def main():
     agent_cfg: RslRlOnPolicyRunnerCfg = cli_args.parse_rsl_rl_cfg(args_cli.task, args_cli)
     env_cfg: ManagerBasedRLEnvCfg = parse_env_cfg(args_cli.task, device=agent_cfg.device, num_envs=args_cli.num_envs)
     
-
     # specify directory for logging experiments
     log_root_path = os.path.join("logs", "rsl_rl", agent_cfg.experiment_name)
     log_root_path = os.path.abspath(log_root_path)
     print(f"[INFO] Logging experiment in directory: {log_root_path}")
+    # save resume path before creating a new log_dir
+    if agent_cfg.resume:
+        # get path to previous checkpoint
+        resume_path = get_checkpoint_path(log_root_path, agent_cfg.load_run, agent_cfg.load_checkpoint)
     # specify directory for logging runs: {time-stamp}_{run_name}
     log_dir = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     if agent_cfg.run_name:
@@ -102,18 +105,18 @@ def main():
     #     print("Terrain Parameters in lvl ", lvl, ": ", terrain_parameters[lvl,:])
     from contextlib import redirect_stdout
 
-    with open('logs/terrain_parameters.txt', 'w') as f:
-        with redirect_stdout(f):
-            print("stairs down: ", terrain_parameters[:,0])
-            print("stairs down: ", terrain_parameters[:,1])
-            print("stairs up: ", terrain_parameters[:,2])
-            print("stairs up: ", terrain_parameters[:,3])
-            print("boxes: ", terrain_parameters[:,4])
-            print("boxes: ", terrain_parameters[:,5])
-            # print("random rough: ", terrain_parameters[:,6])
-            # print("random rough: ", terrain_parameters[:,7])
-            print("slope down: ", terrain_parameters[:,8])
-            print("slope up: ", terrain_parameters[:,9])
+    # with open('logs/terrain_parameters.txt', 'w') as f:
+    #     with redirect_stdout(f):
+    #         print("stairs down: ", terrain_parameters[:,0])
+    #         print("stairs down: ", terrain_parameters[:,1])
+    #         print("stairs up: ", terrain_parameters[:,2])
+    #         print("stairs up: ", terrain_parameters[:,3])
+    #         print("boxes: ", terrain_parameters[:,4])
+    #         print("boxes: ", terrain_parameters[:,5])
+    #         # print("random rough: ", terrain_parameters[:,6])
+    #         # print("random rough: ", terrain_parameters[:,7])
+    #         print("slope down: ", terrain_parameters[:,8])
+    #         print("slope up: ", terrain_parameters[:,9])
 
 
     # create runner from rsl-rl
@@ -135,18 +138,21 @@ def main():
     elif agent_cfg.experiment_name == "phantom_x_rough_ours3":
         agent_cfg.algorithm.class_name = 'Ours3PPO' # TODO: see why it gets overwritten if I don't add this
         runner = Ours3OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
-    elif agent_cfg.experiment_name == "phantom_x_rough_ours4":
+    elif "phantom_x_rough_ours4" in agent_cfg.experiment_name:
         agent_cfg.algorithm.class_name = 'Ours4PPO' # TODO: see why it gets overwritten if I don't add this
         runner = Ours4OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
+    elif agent_cfg.experiment_name == "phantom_x_rough_ours5":
+        agent_cfg.algorithm.class_name = 'Ours5PPO' # TODO: see why it gets overwritten if I don't add this
+        runner = Ours5OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
+    elif agent_cfg.experiment_name == "phantom_x_rough_ours6":
+        agent_cfg.algorithm.class_name = 'Ours6PPO' # TODO: see why it gets overwritten if I don't add this
+        runner = Ours6OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
     else:
         runner = OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
         # write git state to logs
         runner.add_git_repo_to_log(__file__) #TODO: add this to HIMOnPolicyRunner?
         
-    # save resume path before creating a new log_dir
     if agent_cfg.resume:
-        # get path to previous checkpoint
-        resume_path = get_checkpoint_path(log_root_path, agent_cfg.load_run, agent_cfg.load_checkpoint)
         print(f"[INFO]: Loading model checkpoint from: {resume_path}")
         # load previously trained model
         runner.load(resume_path)

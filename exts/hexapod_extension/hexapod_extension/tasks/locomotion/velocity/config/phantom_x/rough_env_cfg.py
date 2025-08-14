@@ -17,6 +17,7 @@ from isaaclab.utils.noise import AdditiveUniformNoiseCfg as Unoise
 ##
 from .phantomx import PHANTOM_X
 from hexapod_extension.tasks.locomotion.velocity.rough import TEST_TERRAINS_CFG, TEST_ONE_TERRAINS_CFG 
+from hexapod_extension.tasks.locomotion.velocity.rough import TEST_INV_SLOPE_CFG, TEST_SLOPE_CFG , TEST_BOXES_CFG, TEST_INV_STAIRS_CFG, TEST_STAIRS_CFG
 
 @configclass
 class PhantomXRoughEnvCfg(LocomotionVelocityRoughEnvCfg):
@@ -70,6 +71,73 @@ class PhantomXOracleRoughEnvCfg(PhantomXRoughEnvCfg):
         # post init of parent
         super().__post_init__()
 
+        # Remove extra attributes from self.observations.critic
+        if hasattr(self.observations.critic, 'foot_forces'):
+            del self.observations.critic.foot_forces
+        if hasattr(self.observations.critic, 'base_forces'):
+            del self.observations.critic.base_forces
+        if hasattr(self.observations.critic, 'thigh_contact_forces'):
+            del self.observations.critic.thigh_contact_forces
+        if hasattr(self.observations.critic, 'tibia_contact_forces'):
+            del self.observations.critic.tibia_contact_forces
+        if hasattr(self.observations.critic, 'thigh_contact_states'):
+            del self.observations.critic.thigh_contact_states
+        if hasattr(self.observations.critic, 'tibia_contact_states'):
+            del self.observations.critic.tibia_contact_states
+        self.observations.policy = self.observations.critic
+        self.observations.policy.history_length = 5 #Number of past observation to store in the observation buffers 
+                                                    #for all observation terms in group.
+        self.observations.policy.flatten_history_dim = True #Flag to flatten history-based observation terms to a 2D 
+                                                            #(num_env, D) tensor for all observation terms in group.
+
+@configclass
+class PhantomXOracle2RoughEnvCfg(PhantomXRoughEnvCfg):
+    def __post_init__(self):
+        # post init of parent
+        super().__post_init__()
+
+        # Remove extra attributes from self.observations.critic
+        # if hasattr(self.observations.critic, 'foot_forces'):
+        #     del self.observations.critic.foot_forces
+        # if hasattr(self.observations.critic, 'base_forces'):
+        #     del self.observations.critic.base_forces
+        if hasattr(self.observations.critic, 'thigh_contact_forces'):
+            del self.observations.critic.thigh_contact_forces
+        # if hasattr(self.observations.critic, 'tibia_contact_forces'):
+        #     del self.observations.critic.tibia_contact_forces
+        # if hasattr(self.observations.critic, 'thigh_contact_states'):
+        #     del self.observations.critic.thigh_contact_states
+        if hasattr(self.observations.critic, 'tibia_contact_states'):
+            del self.observations.critic.tibia_contact_states
+        self.observations.policy = self.observations.critic
+        self.observations.policy.history_length = 5 #Number of past observation to store in the observation buffers 
+                                                    #for all observation terms in group.
+        self.observations.policy.flatten_history_dim = True #Flag to flatten history-based observation terms to a 2D 
+                                                            #(num_env, D) tensor for all observation terms in group.
+
+@configclass
+class PhantomXOracle3RoughEnvCfg(PhantomXRoughEnvCfg):
+    def __post_init__(self):
+        # post init of parent
+        super().__post_init__()
+
+        # Remove extra attributes from self.observations.critic
+        # if hasattr(self.observations.critic, 'thigh_contact_forces'):
+        #     del self.observations.critic.thigh_contact_forces
+        # if hasattr(self.observations.critic, 'tibia_contact_forces'):
+        #     del self.observations.critic.tibia_contact_forces
+        if hasattr(self.observations.critic, 'foot_forces'):
+            del self.observations.critic.foot_forces
+        if hasattr(self.observations.critic, 'base_forces'):
+            del self.observations.critic.base_forces
+        if hasattr(self.observations.critic, 'thigh_contact_forces'):
+            del self.observations.critic.thigh_contact_forces
+        if hasattr(self.observations.critic, 'tibia_contact_forces'):
+            del self.observations.critic.tibia_contact_forces
+        # if hasattr(self.observations.critic, 'tibia_contact_states'):
+            # del self.observations.critic.tibia_contact_states
+        if hasattr(self.observations.critic, 'thigh_contact_states'):
+            del self.observations.critic.thigh_contact_states
         self.observations.policy = self.observations.critic
         self.observations.policy.history_length = 5 #Number of past observation to store in the observation buffers 
                                                     #for all observation terms in group.
@@ -101,10 +169,52 @@ class PhantomXRoughEnvCfg_PLAY(PhantomXRoughEnvCfg):
 
         #IMPORTANTE: esto lo tuve que modificar porque me tiraba error, porque randomization era None. No sé por qué saltó este error
         # remove random pushing
-        if (self.randomization is not None):
+        if hasattr(self, 'randomization'):
             self.randomization.base_external_force_torque = None
             self.randomization.push_robot = None
 
+        # Remove extra attributes from self.observations.critic
+        if hasattr(self.observations.critic, 'foot_forces'):
+            del self.observations.critic.foot_forces
+        if hasattr(self.observations.critic, 'base_forces'):
+            del self.observations.critic.base_forces
+        if hasattr(self.observations.critic, 'thigh_contact_forces'):
+            del self.observations.critic.thigh_contact_forces
+        if hasattr(self.observations.critic, 'tibia_contact_forces'):
+            del self.observations.critic.tibia_contact_forces
+        if hasattr(self.observations.critic, 'thigh_contact_states'):
+            del self.observations.critic.thigh_contact_states
+        if hasattr(self.observations.critic, 'tibia_contact_states'):
+            del self.observations.critic.tibia_contact_states
+
+@configclass
+class PhantomXHIMLocomotionRoughEnvCfg_PLAY(PhantomXHIMLocomotionRoughEnvCfg):
+    def __post_init__(self):
+        # post init of parent
+        super().__post_init__()
+
+        # make a smaller scene for play
+        self.scene.num_envs = 50
+        self.scene.env_spacing = 2.5
+        # spawn the robot randomly in the grid (instead of their terrain levels)
+        self.scene.terrain.max_init_terrain_level = 10
+        # reduce the number of terrains to save memory
+        if self.scene.terrain.terrain_generator is not None:
+            self.scene.terrain.terrain_generator.num_rows = 5
+            self.scene.terrain.terrain_generator.num_cols = 5
+            self.scene.terrain.terrain_generator.curriculum = False
+
+        # disable randomization for play
+        self.observations.policy.enable_corruption = False
+        # # remove random pushing
+        # self.randomization.base_external_force_torque = None
+        # self.randomization.push_robot = None
+
+        #IMPORTANTE: esto lo tuve que modificar porque me tiraba error, porque randomization era None. No sé por qué saltó este error
+        # remove random pushing
+        if hasattr(self, 'randomization'):
+            self.randomization.base_external_force_torque = None
+            self.randomization.push_robot = None
 
 # def heading_error(
 #         env: ManagerBasedRLEnv, limit_heading_error: float, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")
@@ -131,7 +241,7 @@ class PhantomXRoughEnvCfg_PLAY(PhantomXRoughEnvCfg):
 #         print(command[terminate,:])
 #     return  terminate
     
-def add_TEST_parameters(cfg_obj):
+def add_TEST_parameters(cfg_obj, terrain_cfg):
     # Override command ranges and porcentage of standing envs
     cfg_obj.commands.base_velocity.ranges = mdp.UniformVelocityCommandCfg.Ranges(
         lin_vel_x=(1.0, 1.0), lin_vel_y=(-0.1, 0.1), ang_vel_z=(0.0, 0.0), heading=(0.0, 0.0)
@@ -149,7 +259,7 @@ def add_TEST_parameters(cfg_obj):
     cfg_obj.scene.terrain = TerrainImporterCfg(
         prim_path=cfg_obj.scene.terrain.prim_path,
         terrain_type=cfg_obj.scene.terrain.terrain_type,
-        terrain_generator=TEST_TERRAINS_CFG,
+        terrain_generator=terrain_cfg,
         max_init_terrain_level=None, # If this is None it takes the maximum possible level
         collision_group=cfg_obj.scene.terrain.collision_group,
         physics_material=cfg_obj.scene.terrain.physics_material,
@@ -177,14 +287,89 @@ class PhantomXRoughEnvCfg_TEST(PhantomXRoughEnvCfg):
     def __post_init__(self):
         # post init of parent
         super().__post_init__()
-        add_TEST_parameters(self)
+        add_TEST_parameters(self, terrain_cfg=TEST_TERRAINS_CFG)
 
 @configclass
 class PhantomXHIMLocomotionRoughEnvCfg_TEST(PhantomXRoughEnvCfg_TEST):
     def __post_init__(self):
         # post init of parent
         super().__post_init__()
-        add_TEST_parameters(self)
+        add_TEST_parameters(self, terrain_cfg=TEST_TERRAINS_CFG)
+
+        # Remove the attribute 'base_lin_vel' from self.observations.policy
+        if hasattr(self.observations.policy, 'base_lin_vel'):
+            del self.observations.policy.base_lin_vel
+        self.observations.policy.history_length = 5 #Number of past observation to store in the observation buffers 
+                                                    #for all observation terms in group.
+        self.observations.policy.flatten_history_dim = True #Flag to flatten history-based observation terms to a 2D 
+                                                            #(num_env, D) tensor for all observation terms in group.
+
+@configclass
+class PhantomXHIMLocomotionEnvCfg_TEST_INV_SLOPE(PhantomXRoughEnvCfg_TEST):
+    def __post_init__(self):
+        # post init of parent
+        super().__post_init__()
+        add_TEST_parameters(self, terrain_cfg=TEST_INV_SLOPE_CFG)
+
+        # Remove the attribute 'base_lin_vel' from self.observations.policy
+        if hasattr(self.observations.policy, 'base_lin_vel'):
+            del self.observations.policy.base_lin_vel
+        self.observations.policy.history_length = 5 #Number of past observation to store in the observation buffers 
+                                                    #for all observation terms in group.
+        self.observations.policy.flatten_history_dim = True #Flag to flatten history-based observation terms to a 2D 
+                                                            #(num_env, D) tensor for all observation terms in group.
+
+@configclass
+class PhantomXHIMLocomotionEnvCfg_TEST_SLOPE(PhantomXRoughEnvCfg_TEST):
+    def __post_init__(self):
+        # post init of parent
+        super().__post_init__()
+        add_TEST_parameters(self, terrain_cfg=TEST_SLOPE_CFG)
+
+        # Remove the attribute 'base_lin_vel' from self.observations.policy
+        if hasattr(self.observations.policy, 'base_lin_vel'):
+            del self.observations.policy.base_lin_vel
+        self.observations.policy.history_length = 5 #Number of past observation to store in the observation buffers 
+                                                    #for all observation terms in group.
+        self.observations.policy.flatten_history_dim = True #Flag to flatten history-based observation terms to a 2D 
+                                                            #(num_env, D) tensor for all observation terms in group.
+
+@configclass
+class PhantomXHIMLocomotionEnvCfg_TEST_BOXES(PhantomXRoughEnvCfg_TEST):
+    def __post_init__(self):
+        # post init of parent
+        super().__post_init__()
+        add_TEST_parameters(self, terrain_cfg=TEST_BOXES_CFG)
+
+        # Remove the attribute 'base_lin_vel' from self.observations.policy
+        if hasattr(self.observations.policy, 'base_lin_vel'):
+            del self.observations.policy.base_lin_vel
+        self.observations.policy.history_length = 5 #Number of past observation to store in the observation buffers 
+                                                    #for all observation terms in group.
+        self.observations.policy.flatten_history_dim = True #Flag to flatten history-based observation terms to a 2D 
+                                                            #(num_env, D) tensor for all observation terms in group.
+
+@configclass
+class PhantomXHIMLocomotionEnvCfg_TEST_INV_STAIRS(PhantomXRoughEnvCfg_TEST):
+    def __post_init__(self):
+        # post init of parent
+        super().__post_init__()
+        add_TEST_parameters(self, terrain_cfg=TEST_INV_STAIRS_CFG)
+
+        # Remove the attribute 'base_lin_vel' from self.observations.policy
+        if hasattr(self.observations.policy, 'base_lin_vel'):
+            del self.observations.policy.base_lin_vel
+        self.observations.policy.history_length = 5 #Number of past observation to store in the observation buffers 
+                                                    #for all observation terms in group.
+        self.observations.policy.flatten_history_dim = True #Flag to flatten history-based observation terms to a 2D 
+                                                            #(num_env, D) tensor for all observation terms in group.
+
+@configclass
+class PhantomXHIMLocomotionEnvCfg_TEST_STAIRS(PhantomXRoughEnvCfg_TEST):
+    def __post_init__(self):
+        # post init of parent
+        super().__post_init__()
+        add_TEST_parameters(self, terrain_cfg=TEST_STAIRS_CFG)
 
         # Remove the attribute 'base_lin_vel' from self.observations.policy
         if hasattr(self.observations.policy, 'base_lin_vel'):
@@ -252,10 +437,24 @@ class PhantomXRoughEnvCfg_TEST_ONE(PhantomXRoughEnvCfg):
 
         #IMPORTANTE: esto lo tuve que modificar porque me tiraba error, porque randomization era None. No sé por qué saltó este error
         # remove random pushing
-        if (self.randomization is not None):
+        if hasattr(self, 'ramdomization'):
             self.randomization.base_external_force_torque = None
             self.randomization.push_robot = None
         # TODO: ver cómo queda esto
+
+@configclass
+class PhantomXHIMLocomotionRoughEnvCfg_TEST_ONE(PhantomXRoughEnvCfg_TEST_ONE):
+    def __post_init__(self):
+        # post init of parent
+        super().__post_init__()
+
+        # Remove the attribute 'base_lin_vel' from self.observations.policy
+        if hasattr(self.observations.policy, 'base_lin_vel'):
+            del self.observations.policy.base_lin_vel
+        self.observations.policy.history_length = 5 #Number of past observation to store in the observation buffers 
+                                                    #for all observation terms in group.
+        self.observations.policy.flatten_history_dim = True #Flag to flatten history-based observation terms to a 2D 
+                                                            #(num_env, D) tensor for all observation terms in group.
 
 
 @configclass

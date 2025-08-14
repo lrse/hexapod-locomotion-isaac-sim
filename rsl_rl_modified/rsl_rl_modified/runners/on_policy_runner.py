@@ -13,10 +13,13 @@ from collections import deque
 from torch.utils.tensorboard import SummaryWriter as TensorboardSummaryWriter
 
 import rsl_rl
-from rsl_rl.algorithms import PPO
-from rsl_rl.env import VecEnv
-from rsl_rl.modules import ActorCritic, ActorCriticRecurrent, EmpiricalNormalization
+from rsl_rl_modified.algorithms import PPO
+from rsl_rl_modified.env import VecEnv
+from rsl_rl_modified.modules import ActorCritic, ActorCriticRecurrent, EmpiricalNormalization
 from rsl_rl.utils import store_code_state
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')
 
 
 class OnPolicyRunner:
@@ -74,12 +77,12 @@ class OnPolicyRunner:
             self.logger_type = self.logger_type.lower()
 
             if self.logger_type == "neptune":
-                from rsl_rl.utils.neptune_utils import NeptuneSummaryWriter
+                from rsl_rl_modified.utils.neptune_utils import NeptuneSummaryWriter
 
                 self.writer = NeptuneSummaryWriter(log_dir=self.log_dir, flush_secs=10, cfg=self.cfg)
                 self.writer.log_config(self.env.cfg, self.cfg, self.alg_cfg, self.policy_cfg)
             elif self.logger_type == "wandb":
-                from rsl_rl.utils.wandb_utils import WandbSummaryWriter
+                from rsl_rl_modified.utils.wandb_utils import WandbSummaryWriter
 
                 self.writer = WandbSummaryWriter(log_dir=self.log_dir, flush_secs=10, cfg=self.cfg)
                 self.writer.log_config(self.env.cfg, self.cfg, self.alg_cfg, self.policy_cfg)
@@ -107,6 +110,7 @@ class OnPolicyRunner:
         tot_iter = start_iter + num_learning_iterations
         for it in range(start_iter, tot_iter):
             start = time.time()
+            # obs_buffer = [] # Added for testing (TODO: remove after)
             # Rollout
             with torch.inference_mode():
                 for i in range(self.num_steps_per_env):
@@ -140,6 +144,7 @@ class OnPolicyRunner:
                         cur_episode_length += 1
                         new_ids = (dones > 0).nonzero(as_tuple=False)
                         rewbuffer.extend(cur_reward_sum[new_ids][:, 0].cpu().numpy().tolist())
+                        # obs_buffer.append(obs) # Added for testing (TODO: remove after)
                         lenbuffer.extend(cur_episode_length[new_ids][:, 0].cpu().numpy().tolist())
                         cur_reward_sum[new_ids] = 0
                         cur_episode_length[new_ids] = 0
@@ -199,6 +204,59 @@ class OnPolicyRunner:
         mean_std = self.alg.actor_critic.std.mean()
         fps = int(self.num_steps_per_env * self.env.num_envs / (locs["collection_time"] + locs["learn_time"]))
 
+        # obs_terms = locs['self'].env.unwrapped.observation_manager._group_obs_term_names['policy']
+        # remove_from_log = ['base_lin_vel', 'base_ang_vel', 'projected_gravity', 'velocity_commands', 'joint_pos', 'joint_vel', 'actions', 'height_scan']
+        # obs_dim = locs['self'].env.unwrapped.observation_manager._group_obs_term_dim['policy']
+        # history_length = locs['self'].env.unwrapped.observation_manager.cfg.policy.history_length
+        # init_index = 0
+        # for index, name in enumerate(obs_terms):
+        #     if name in remove_from_log:
+        #         init_index += obs_dim[index][0]
+        #         continue
+        #     obs_buffer = locs["obs_buffer"]
+        #     obs = [o[0][init_index:init_index+int(obs_dim[index][0]/ history_length)] for o in obs_buffer]
+        #     episode_time = [t*self.env.cfg.sim.dt for t in range(len(obs_buffer))]
+        #     if name == 'base_forces':
+        #         fig = plt.figure(figsize=(10,5), layout="constrained")
+        #         ax_array = fig.subplots(1, 2, squeeze=False)
+        #         x = [o[0].item() for o in obs]
+        #         y = [o[1].item() for o in obs]
+        #         z = [o[2].item() for o in obs]
+        #         ax_array[0, 0].plot(episode_time, x, label="x", linestyle='-')
+        #         ax_array[0, 0].plot(episode_time, y, label="y", linestyle='--')
+        #         ax_array[0, 0].plot(episode_time, z, label="z", linestyle='dotted')
+        #         ax_array[0, 0].set_xlabel('time')
+        #         ax_array[0, 0].set_ylabel(name)
+        #         ax_array[0, 0].set_title(name+" for one episode")
+        #         ax_array[0, 0].legend()
+        #         self.writer.add_figure("Observation_"+name, fig, locs["it"])
+        #     else:
+        #         fig = plt.figure(figsize=(10,5), layout="constrained")
+        #         ax_array = fig.subplots(2, 3, squeeze=False)
+        #         if name[-7:] == '_forces':
+        #             range_step = 3
+        #         elif name[-7:] == '_states':
+        #             range_step = 1
+        #         for k in range(0,len(obs[0]),range_step):
+        #             ind1 = 0 if k/range_step<3 else 1
+        #             ind2 = int(k/range_step)%3
+        #             if name[-7:] == '_forces':
+        #                 x = [o[k].item() for o in obs]
+        #                 y = [o[k+1].item() for o in obs]
+        #                 z = [o[k+2].item() for o in obs]
+        #                 ax_array[ind1, ind2].plot(episode_time, x, label="x", linestyle='-')
+        #                 ax_array[ind1, ind2].plot(episode_time, y, label="y", linestyle='--')
+        #                 ax_array[ind1, ind2].plot(episode_time, z, label="z", linestyle='dotted')
+        #                 ax_array[ind1, ind2].legend()
+        #             elif name[-7:] == '_states':
+        #                 s = [o[k].item() for o in obs]
+        #                 ax_array[ind1, ind2].plot(episode_time, s, linestyle='-')
+        #             ax_array[ind1, ind2].set_xlabel('time')
+        #             ax_array[ind1, ind2].set_ylabel(name)
+        #             ax_array[ind1, ind2].set_title(name+" foot "+str(k/range_step)+" for one episode")
+        #         self.writer.add_figure("Observation_"+name, fig, locs["it"])
+        #     init_index += obs_dim[index][0]
+
         self.writer.add_scalar("Loss/value_function", locs["mean_value_loss"], locs["it"])
         self.writer.add_scalar("Loss/surrogate", locs["mean_surrogate_loss"], locs["it"])
         self.writer.add_scalar("Loss/learning_rate", self.alg.learning_rate, locs["it"])
@@ -215,12 +273,12 @@ class OnPolicyRunner:
                     "Train/mean_episode_length/time", statistics.mean(locs["lenbuffer"]), self.tot_time
                 )
 
-        str = f" \033[1m Learning iteration {locs['it']}/{locs['tot_iter']} \033[0m "
+        string = f" \033[1m Learning iteration {locs['it']}/{locs['tot_iter']} \033[0m "
 
         if len(locs["rewbuffer"]) > 0:
             log_string = (
                 f"""{'#' * width}\n"""
-                f"""{str.center(width, ' ')}\n\n"""
+                f"""{string.center(width, ' ')}\n\n"""
                 f"""{'Computation:':>{pad}} {fps:.0f} steps/s (collection: {locs[
                             'collection_time']:.3f}s, learning {locs['learn_time']:.3f}s)\n"""
                 f"""{'Value function loss:':>{pad}} {locs['mean_value_loss']:.4f}\n"""
@@ -234,7 +292,7 @@ class OnPolicyRunner:
         else:
             log_string = (
                 f"""{'#' * width}\n"""
-                f"""{str.center(width, ' ')}\n\n"""
+                f"""{string.center(width, ' ')}\n\n"""
                 f"""{'Computation:':>{pad}} {fps:.0f} steps/s (collection: {locs[
                             'collection_time']:.3f}s, learning {locs['learn_time']:.3f}s)\n"""
                 f"""{'Value function loss:':>{pad}} {locs['mean_value_loss']:.4f}\n"""

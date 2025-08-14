@@ -28,6 +28,7 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
+from .normalizer import EmpiricalNormalization
 from .actor_critic import ActorCritic
 from .actor_critic_recurrent import ActorCriticRecurrent
 from .him_actor_critic import HIMActorCritic
@@ -42,3 +43,7 @@ from .ours3_actor_critic import Ours3ActorCritic
 from .ours3_estimator import Ours3Estimator
 from .ours4_actor_critic import Ours4ActorCritic
 from .ours4_estimator import Ours4Estimator
+from .ours5_actor_critic import Ours5ActorCritic
+from .ours5_estimator import Ours5Estimator
+from .ours6_actor_critic import Ours6ActorCritic
+from .ours6_estimator import Ours6Estimator

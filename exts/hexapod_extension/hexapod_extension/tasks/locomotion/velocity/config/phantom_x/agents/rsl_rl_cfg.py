@@ -5,10 +5,10 @@ from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlPpoActorCriticCfg, R
 @configclass
 class PhantomXRoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     num_steps_per_env = 96#24
-    max_iterations = 1500*2 #1500
-    save_interval = 50
+    max_iterations = 4000 #1500
+    save_interval = 500#max_iterations
     experiment_name = "phantom_x_rough_blind"
-    empirical_normalization = False
+    empirical_normalization = True
     policy = RslRlPpoActorCriticCfg(
         class_name="ActorCriticRecurrent",
         init_noise_std=1.0,
@@ -110,7 +110,7 @@ class PhantomXOurs3RoughPPORunnerCfg(PhantomXRoughPPORunnerCfg):
 
 @configclass
 class PhantomXOurs4RoughPPORunnerCfg(PhantomXRoughPPORunnerCfg):
-    experiment_name = "phantom_x_rough_ours4"
+    experiment_name = "phantom_x_rough_ours4" #_base_illegal_contacts_only"
     policy = RslRlPpoActorCriticCfg(
         class_name="Ours4ActorCritic",
         init_noise_std=1.0,
@@ -120,8 +120,66 @@ class PhantomXOurs4RoughPPORunnerCfg(PhantomXRoughPPORunnerCfg):
     )
 
 @configclass
+class PhantomXOurs5RoughPPORunnerCfg(PhantomXRoughPPORunnerCfg):
+    experiment_name = "phantom_x_rough_ours5"
+    policy = RslRlPpoActorCriticCfg(
+        class_name="Ours5ActorCritic",
+        init_noise_std=1.0,
+        actor_hidden_dims=[512, 256, 128],
+        critic_hidden_dims=[512, 256, 128],
+        activation="elu",
+    )
+
+@configclass
+class PhantomXOurs6RoughPPORunnerCfg(PhantomXRoughPPORunnerCfg):
+    experiment_name = "phantom_x_rough_ours6"
+    policy = RslRlPpoActorCriticCfg(
+        class_name="Ours6ActorCritic",
+        init_noise_std=1.0,
+        actor_hidden_dims=[512, 256, 128],
+        critic_hidden_dims=[512, 256, 128],
+        activation="elu",
+    )
+
+@configclass
 class PhantomXOracleRoughPPORunnerCfg(PhantomXRoughPPORunnerCfg):
     experiment_name = "phantom_x_rough_oracle"
+    policy = RslRlPpoActorCriticCfg(
+        class_name="ActorCritic",
+        init_noise_std=1.0,
+        actor_hidden_dims=[512, 256, 128],
+        critic_hidden_dims=[512, 256, 128],
+        activation="elu",
+    )
+
+@configclass
+class PhantomXOracleNormalizedRoughPPORunnerCfg(PhantomXRoughPPORunnerCfg):
+    experiment_name = "phantom_x_rough_oracle_normalized"
+    empirical_normalization = True
+    policy = RslRlPpoActorCriticCfg(
+        class_name="ActorCritic",
+        init_noise_std=1.0,
+        actor_hidden_dims=[512, 256, 128],
+        critic_hidden_dims=[512, 256, 128],
+        activation="elu",
+    )
+
+@configclass
+class PhantomXOracle2RoughPPORunnerCfg(PhantomXRoughPPORunnerCfg):
+    experiment_name = "phantom_x_rough_oracle2_v2"
+    empirical_normalization = True
+    policy = RslRlPpoActorCriticCfg(
+        class_name="ActorCritic",
+        init_noise_std=1.0,
+        actor_hidden_dims=[512, 256, 128],
+        critic_hidden_dims=[512, 256, 128],
+        activation="elu",
+    )
+
+@configclass
+class PhantomXOracle3RoughPPORunnerCfg(PhantomXRoughPPORunnerCfg):
+    experiment_name = "phantom_x_rough_oracle3"
+    empirical_normalization = True
     policy = RslRlPpoActorCriticCfg(
         class_name="ActorCritic",
         init_noise_std=1.0,

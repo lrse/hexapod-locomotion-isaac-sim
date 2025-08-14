@@ -37,7 +37,7 @@ from torch.utils.tensorboard import SummaryWriter as TensorboardSummaryWriter
 import torch
 
 from rsl_rl_modified.algorithms import Ours4PPO
-from rsl_rl_modified.modules import Ours4ActorCritic
+from rsl_rl_modified.modules import Ours4ActorCritic, EmpiricalNormalization
 from rsl_rl_modified.env import VecEnv
 
 
@@ -70,6 +70,13 @@ class Ours4OnPolicyRunner:
         self.alg: Ours4PPO = alg_class(actor_critic, device=self.device, **self.alg_cfg)
         self.num_steps_per_env = self.cfg["num_steps_per_env"]
         self.save_interval = self.cfg["save_interval"]
+        self.empirical_normalization = self.cfg["empirical_normalization"]
+        if self.empirical_normalization:
+            self.obs_normalizer = EmpiricalNormalization(shape=[self.num_actor_obs], until=1.0e8).to(self.device)
+            self.critic_obs_normalizer = EmpiricalNormalization(shape=[num_critic_obs], until=1.0e8).to(self.device)
+        else:
+            self.obs_normalizer = torch.nn.Identity().to(self.device)  # no normalization
+            self.critic_obs_normalizer = torch.nn.Identity().to(self.device)  # no normalization
 
         # init storage and model
         self.alg.init_storage(self.env.num_envs, self.num_steps_per_env, [self.env.num_obs], [self.env.num_privileged_obs], [self.env.num_actions])
@@ -110,7 +117,7 @@ class Ours4OnPolicyRunner:
         obs, extras = self.env.get_observations()
         critic_obs = extras["observations"].get("critic", obs)
         obs, critic_obs = obs.to(self.device), critic_obs.to(self.device)
-        self.alg.actor_critic.train() # switch to train mode (for dropout for example)
+        self.train_mode()  # switch to train mode (for dropout for example)
 
         ep_infos = []
         rewbuffer = deque(maxlen=100)
@@ -133,7 +140,13 @@ class Ours4OnPolicyRunner:
                         critic_obs = obs
                     
                     obs, critic_obs, rewards, dones = obs.to(self.device), critic_obs.to(self.device), rewards.to(self.device), dones.to(self.device)
-                    
+                    # perform normalization
+                    obs = self.obs_normalizer(obs)
+                    if "critic" in infos["observations"]:
+                        critic_obs = self.critic_obs_normalizer(infos["observations"]["critic"])
+                    else:
+                        critic_obs = obs
+
                     next_critic_obs = critic_obs.clone().detach()
 
                     self.alg.process_env_step(rewards, dones, infos, next_critic_obs)
@@ -245,27 +258,39 @@ class Ours4OnPolicyRunner:
                         #   f"""{'Mean reward/step:':>{pad}} {locs['mean_reward']:.2f}\n"""
                         #   f"""{'Mean episode length/episode:':>{pad}} {locs['mean_trajectory_length']:.2f}\n""")
 
-        log_string += ep_string
+        # log_string += ep_string
         log_string += (f"""{'-' * width}\n"""
                        f"""{'Total timesteps:':>{pad}} {self.tot_timesteps}\n"""
                        f"""{'Iteration time:':>{pad}} {iteration_time:.2f}s\n"""
-                       f"""{'Total time:':>{pad}} {self.tot_time:.2f}s\n"""
+                    #    f"""{'Total time:':>{pad}} {self.tot_time:.2f}s\n"""
+                    #    f"""{'ETA:':>{pad}} {self.tot_time / (locs['it'] + 1) * (
+                    #            locs['num_learning_iterations'] - locs['it']):.1f}s\n""")
+                       f"""{'Total time:':>{pad}} {self.tot_time/3600:.2f} hours\n"""
                        f"""{'ETA:':>{pad}} {self.tot_time / (locs['it'] + 1) * (
-                               locs['num_learning_iterations'] - locs['it']):.1f}s\n""")
+                               locs['num_learning_iterations'] - locs['it'])/3600:.1f} hours\n""")
         print(log_string)
 
     def save(self, path, infos=None):
         torch.save({
+            }, path)
+        saved_dict = {
             'model_state_dict': self.alg.actor_critic.state_dict(),
             'optimizer_state_dict': self.alg.optimizer.state_dict(),
             'estimator_optimizer_state_dict': self.alg.actor_critic.estimator.optimizer.state_dict(),
             'iter': self.current_learning_iteration,
-            'infos': infos,
-            }, path)
+            "infos": infos,
+        }
+        if self.empirical_normalization:
+            saved_dict["obs_norm_state_dict"] = self.obs_normalizer.state_dict()
+            saved_dict["critic_obs_norm_state_dict"] = self.critic_obs_normalizer.state_dict()
+        torch.save(saved_dict, path)
 
     def load(self, path, load_optimizer=True):
         loaded_dict = torch.load(path)
         self.alg.actor_critic.load_state_dict(loaded_dict['model_state_dict'])
+        if self.empirical_normalization:
+            self.obs_normalizer.load_state_dict(loaded_dict["obs_norm_state_dict"])
+            self.critic_obs_normalizer.load_state_dict(loaded_dict["critic_obs_norm_state_dict"])
         if load_optimizer:
             self.alg.optimizer.load_state_dict(loaded_dict['optimizer_state_dict'])
             self.alg.actor_critic.estimator.optimizer.load_state_dict(loaded_dict['estimator_optimizer_state_dict'])
@@ -273,7 +298,24 @@ class Ours4OnPolicyRunner:
         return loaded_dict['infos']
 
     def get_inference_policy(self, device=None):
-        self.alg.actor_critic.eval() # switch to evaluation mode (dropout for example)
+        self.eval_mode()  # switch to evaluation mode (dropout for example)
         if device is not None:
             self.alg.actor_critic.to(device)
-        return self.alg.actor_critic.act_inference
+        policy = self.alg.actor_critic.act_inference
+        if self.cfg["empirical_normalization"]:
+            if device is not None:
+                self.obs_normalizer.to(device)
+            policy = lambda x: self.alg.actor_critic.act_inference(self.obs_normalizer(x))  # noqa: E731
+        return policy
+
+    def train_mode(self):
+        self.alg.actor_critic.train()
+        if self.empirical_normalization:
+            self.obs_normalizer.train()
+            self.critic_obs_normalizer.train()
+
+    def eval_mode(self):
+        self.alg.actor_critic.eval()
+        if self.empirical_normalization:
+            self.obs_normalizer.eval()
+            self.critic_obs_normalizer.eval()

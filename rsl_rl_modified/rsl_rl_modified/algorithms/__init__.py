@@ -35,3 +35,5 @@ from .ours_ppo import OursPPO
 from .ours2_ppo import Ours2PPO
 from .ours3_ppo import Ours3PPO
 from .ours4_ppo import Ours4PPO
+from .ours5_ppo import Ours5PPO
+from .ours6_ppo import Ours6PPO

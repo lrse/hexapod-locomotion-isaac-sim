@@ -4,14 +4,13 @@
 
 import argparse
 
-from omni.isaac.lab.app import AppLauncher
+from isaaclab.app import AppLauncher
 
 # local imports
 import cli_args  # isort: skip
 
 # add argparse arguments
-parser = argparse.ArgumentParser(description="Train an RL agent with RSL-RL.")
-parser.add_argument("--cpu", action="store_true", default=False, help="Use CPU pipeline.")
+parser = argparse.ArgumentParser(description="Play an RL agent trained with RSL-RL.")
 parser.add_argument("--num_envs", type=int, default=None, help="Number of environments to simulate.")
 parser.add_argument("--task", type=str, default=None, help="Name of the task.")
 parser.add_argument("--seed", type=int, default=None, help="Seed used for the environment")
@@ -33,19 +32,20 @@ import os
 import torch
 
 from rsl_rl.runners import OnPolicyRunner
+from rsl_rl_modified.runners import OnPolicyRunner, HIMOnPolicyRunner, Ours4OnPolicyRunner
+
 
 # Import extensions to set up environment tasks
 import hexapod_extension.tasks  # noqa: F401
 
-from omni.isaac.lab_tasks.utils import get_checkpoint_path, parse_env_cfg
-from omni.isaac.lab_tasks.utils.wrappers.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlVecEnvWrapper, export_policy_as_onnx
-
+from isaaclab_tasks.utils import get_checkpoint_path, parse_env_cfg
+from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlVecEnvWrapper, export_policy_as_onnx
 
 def main():
     """Play with RSL-RL agent."""
     # parse configuration
-    env_cfg = parse_env_cfg(args_cli.task, use_gpu=not args_cli.cpu, num_envs=args_cli.num_envs)
     agent_cfg: RslRlOnPolicyRunnerCfg = cli_args.parse_rsl_rl_cfg(args_cli.task, args_cli)
+    env_cfg = parse_env_cfg(args_cli.task, device=agent_cfg.device, num_envs=args_cli.num_envs)
 
     # create isaac environment
     env = gym.make(args_cli.task, cfg=env_cfg)
@@ -61,7 +61,15 @@ def main():
     print(f"[INFO]: Loading model checkpoint from: {resume_path}")
 
     # load previously trained model
-    ppo_runner = OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=None, device=agent_cfg.device)
+    env.num_one_step_obs = int(env.unwrapped.observation_manager._group_obs_dim['policy'][0] / env_cfg.observations.policy.history_length)
+    if "phantom_x_rough_him_locomotion" in agent_cfg.experiment_name:
+        agent_cfg.algorithm.class_name = 'HIMPPO' # TODO: see why it gets overwritten if I don't add this
+        ppo_runner = HIMOnPolicyRunner(env, agent_cfg.to_dict(), log_dir=None, device=agent_cfg.device)
+    elif "phantom_x_rough_ours4" in agent_cfg.experiment_name:
+        agent_cfg.algorithm.class_name = 'Ours4PPO' # TODO: see why it gets overwritten if I don't add this
+        ppo_runner = Ours4OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=None, device=agent_cfg.device)
+    else:
+        ppo_runner = OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=None, device=agent_cfg.device)
     ppo_runner.load(resume_path)
     print(f"[INFO]: Loading model checkpoint from: {resume_path}")
 
@@ -89,6 +97,7 @@ def main():
 
 if __name__ == "__main__":
     # run the main execution
+    # args_cli.load_run = "2025-04-24_10-06-29"
     main()
     # close sim app
     simulation_app.close()

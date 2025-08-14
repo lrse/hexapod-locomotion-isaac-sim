@@ -1,4 +1,4 @@
-"""Script to play a checkpoint of an RL agent from RSL-RL."""
+"""Script to test a checkpoint of an RL agent from RSL-RL."""
 
 """Launch Isaac Sim Simulator first."""
 
@@ -13,7 +13,9 @@ import cli_args  # isort: skip
 parser = argparse.ArgumentParser(description="Train an RL agent with RSL-RL.")
 parser.add_argument("--num_envs", type=int, default=None, help="Number of environments to simulate.")
 parser.add_argument("--task", type=str, default=None, help="Name of the task.")
-parser.add_argument("--seed", type=int, default=None, help="Seed used for the environment")
+parser.add_argument("--seed", type=int, default=None, help="Seed used for the environment.")
+parser.add_argument("--changed_experiment_name", type=str, default=None, help="Experiment name. Used to search the policy to load.")
+parser.add_argument("--terrain", type=str, default=None, help="Terrain in which the test is performed. Used to save the results with a meaningful name.")
 # append RSL-RL cli arguments
 cli_args.add_rsl_rl_args(parser)
 # append AppLauncher cli args
@@ -31,6 +33,7 @@ import gymnasium as gym
 import numpy as np
 import os
 import torch
+import pickle
 
 from unittest.mock import patch
 
@@ -121,7 +124,10 @@ def main():
     print("Terrain Parameters: ", env.env.unwrapped.scene.terrain.terrain_parameter)
 
     # specify directory for logging experiments
-    log_root_path = os.path.join("logs", "rsl_rl", agent_cfg.experiment_name)
+    if args_cli.changed_experiment_name is None:
+        log_root_path = os.path.join("logs", "rsl_rl", agent_cfg.experiment_name)
+    else:
+        log_root_path = os.path.join("logs", "rsl_rl", args_cli.changed_experiment_name)
     log_root_path = os.path.abspath(log_root_path)
     print(f"[INFO] Loading experiment from directory: {log_root_path}")
     resume_path = get_checkpoint_path(log_root_path, agent_cfg.load_run, agent_cfg.load_checkpoint)
@@ -192,6 +198,12 @@ def main():
                 total_robots = [len(sublist) if sublist else 0 for sublist in lista]
                 # parameters = list(env.unwrapped.scene._terrain.terrain_parameter.flatten())
                 parameters = env.unwrapped.scene._terrain.terrain_parameter
+                # Verify that the parameter stays the same for all terrains with the same level
+                for lvl in range(parameters.shape[0]):
+                    params = list(parameters[lvl,:])
+                    for p in params:
+                        assert p == params[0],"Not all terrains of the same level have the same parameter."
+
                 print('# of successful robots: ', successful)
                 print('parameters: ', parameters)
                 print('parameters: ', list(parameters[:,0]))
@@ -201,11 +213,17 @@ def main():
 
     # close the simulator
     env.close()
+    file_path = os.path.join(log_root_path, agent_cfg.load_run, args_cli.terrain+'_data.pkl')
+    # Save variables
+    data = {'parameters': list(parameters[:,0]), 'success_rate': success_rate}
+    with open(file_path, 'wb') as f:
+        pickle.dump(data, f)
+    print(f"[INFO] Saved data as: {file_path}")
 
 
 if __name__ == "__main__":
     # run the main execution
-    args_cli.task = "Isaac-Velocity-Rough-Phantom-X-HIMLocomotion-Test"
+    # args_cli.task = "Isaac-Velocity-Rough-Phantom-X-HIMLocomotion-Test"
     # args_cli.load_run = "2025-02-22_21-20-34"
     # args_cli.task = "Isaac-Velocity-Rough-Phantom-X-DreamWaQ-Test"
     # args_cli.load_run = "2025-02-26_00-06-59"

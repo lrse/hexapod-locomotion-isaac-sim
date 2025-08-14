@@ -24,7 +24,7 @@ from isaaclab.utils.noise import AdditiveUniformNoiseCfg as Unoise
 ##
 # Pre-defined configs
 ##
-from .rough import ROUGH_TERRAINS_CFG, EXTRA_ROUGH_TERRAINS_CFG  # isort: skip
+from .rough import ROUGH_TERRAINS_CFG, EXTRA_ROUGH_TERRAINS_CFG, ROUGH_TERRAINS_2_CFG#, PRUEBA_TERRAINS_CFG  # isort: skip
 
 
 ##
@@ -40,7 +40,7 @@ class MySceneCfg(InteractiveSceneCfg):
     terrain = TerrainImporterCfg(
         prim_path="/World/ground",
         terrain_type="generator",
-        terrain_generator=EXTRA_ROUGH_TERRAINS_CFG,#ROUGH_TERRAINS_CFG,#
+        terrain_generator=EXTRA_ROUGH_TERRAINS_CFG,#ROUGH_TERRAINS_CFG,#ROUGH_TERRAINS_2_CFG,#PRUEBA_TERRAINS_CFG,#
         max_init_terrain_level=0,
         collision_group=-1,
         physics_material=sim_utils.RigidBodyMaterialCfg(
@@ -62,12 +62,23 @@ class MySceneCfg(InteractiveSceneCfg):
         prim_path="{ENV_REGEX_NS}/Robot/MP_BODY",
         offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 20.0)),
         attach_yaw_only=True, # We only set yaw to true because we only care about height information
-        pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[1.6, 1.0]), # For a uniform grid pattern, we specify the pattern using GridPatternCfg
-        # pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.75, 0.75]), # For a uniform grid pattern, we specify the pattern using GridPatternCfg
+        # pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[1.6, 1.0]), # For a uniform grid pattern, we specify the pattern using GridPatternCfg
+        pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.75, 0.75]), # height_scanner 1 = height_scanner 2 (solo que el 1 termina en 3k iteraciones y el 2 en 4k)
+        # pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[1.6, 1.6]), # height_scanner 3
+        # pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[1.0, 1.0]), # height_scanner 4
+        # pattern_cfg=patterns.GridPatternCfg(resolution=0.025, size=[1.0, 1.0]), # For a uniform grid pattern, we specify the pattern using GridPatternCfg
         debug_vis=False, # If True, lets you visualize where the rays hit the mesh
         mesh_prim_paths=["/World/ground"],
     )
-    contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*", history_length=3, track_air_time=False)
+    contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*", history_length=3, track_air_time=False, track_pose=True)
+    contact_forces_base = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/MP_BODY", history_length=3, 
+                                           debug_vis=False, track_air_time=False, track_pose=True)
+    contact_forces_tibia = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/tibia_.*", history_length=3, 
+                                            # filter_prim_paths_expr=["/World/ground/terrain"])#, "{ENV_REGEX_NS}/Robot/.*"])
+                                            debug_vis=False, track_air_time=False, track_pose=True)
+    contact_forces_thigh = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/thigh_.*", history_length=3, 
+                                            debug_vis=False, track_air_time=False, track_pose=True)
+
     # lights
     light = AssetBaseCfg(
         prim_path="/World/light",
@@ -169,39 +180,32 @@ class ObservationsCfg:
             # # noise=Unoise(n_min=-0.01, n_max=0.01),
             clip=(-1.0, 1.0),
         )
-
-        # TODO: expand critic observations.
-        # forces = ObsTerm(func=mdp.net_forces,
-        #                         params={"sensor_cfg": SceneEntityCfg("contact_forces",
-        #                                                             body_names=["MP_BODY", "c1_.*", "thigh_.*", "tibia_.*"]),},
-        #                 )
-        # foot_forces = ObsTerm(func=mdp.net_forces,
-        #                     params={"sensor_cfg": SceneEntityCfg("contact_forces",
-        #                                                         body_names=["tibia_.*"])},
-        #                     )
-        # base_forces = ObsTerm(func=mdp.net_forces,
-        #                         params={"sensor_cfg": SceneEntityCfg("contact_forces",
-        #                                                             body_names=["MP_BODY"]),},
+        foot_forces = ObsTerm(func=mdp.net_forces,
+                            params={"sensor_cfg": SceneEntityCfg("contact_forces_tibia")},
+                            )
+        base_forces = ObsTerm(func=mdp.net_forces,
+                                params={"sensor_cfg": SceneEntityCfg("contact_forces_base"),},
+                                )
+        # thigh_contact_forces = ObsTerm(func=mdp.net_forces,
+        #                         params={"sensor_cfg": SceneEntityCfg("contact_forces_thigh"),},
         #                         )
-        # thigh_contact_states = ObsTerm(func=mdp.contact_states,
-        #                         params={"threshold": 1.0,
-        #                                 "sensor_cfg": SceneEntityCfg("contact_forces",
-        #                                                             body_names=["thigh_.*"]),},
+        # tibia_contact_forces = ObsTerm(func=mdp.net_forces,
+        #                         params={"sensor_cfg": SceneEntityCfg("contact_forces_tibia"),},
         #                         )
+        thigh_contact_states = ObsTerm(func=mdp.contact_states,
+                                params={"threshold": 1.0, "sensor_cfg": SceneEntityCfg("contact_forces_thigh"),},
+                                )
         # tibia_contact_states = ObsTerm(func=mdp.contact_states,
-        #                         params={"threshold": 1.0,
-        #                                 "sensor_cfg": SceneEntityCfg("contact_forces",
-        #                                                             body_names=["tibia_.*"]),},
+        #                         params={"threshold": 1.0, "sensor_cfg": SceneEntityCfg("contact_forces_tibia"),},
         #                         )
 
         def __post_init__(self):
             self.enable_corruption = False # Adds the specified noises if True
             self.concatenate_terms = True
-
+ 
     # observation groups
     policy: PolicyCfg = PolicyCfg()
     critic: CriticCfg = CriticCfg() # The name has to be critic for rsl_rl to correctly identify it
-
 
 @configclass
 class EventCfg:
@@ -236,7 +240,7 @@ class EventCfg:
         mode="reset",
         params={
             "asset_cfg": SceneEntityCfg("robot", body_names="MP_BODY"),#"base"),
-            "force_range": (0.0, 0.0),#(-1.0, 1.0),#
+            "force_range": (0.0, 0.0),#(1.0, 1.0),#(-1.0, 1.0),#
             "torque_range": (-0.0, 0.0), #TODO: agregar?
         },
     )
@@ -298,6 +302,13 @@ class RewardsCfg:
     # -- optional penalties
     flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=0.0) # Penalizes the xy-components of the projected gravity vector using L2 norm
     # dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=0.0) # Penalizes joint positions if they cross the soft limits.
+    # undesired_base_contact = RewTerm(
+    #                             func=mdp.undesired_contacts,
+    #                             weight=-0.5,
+    #                             params={
+    #                                 "sensor_cfg": SceneEntityCfg("contact_forces", body_names="MP_BODY"), "threshold": 1.0                               
+    #                             },
+    #                             )
     # tripod_gate = RewTerm(
     #     func=mdp.tripod_gate,
     #     weight=0.01,
@@ -368,7 +379,7 @@ class LocomotionVelocityRoughEnvCfg(ManagerBasedRLEnvCfg):
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.decimation = 4 # Apply control action every decimation number of simulation steps
+        self.decimation = 4#5 # Apply control action every decimation number of simulation steps
         self.episode_length_s = 20.0 # Duration of an episode (in seconds)
         # simulation settings
         self.sim.dt = 0.005 # Physics simulation time-step (in seconds)
@@ -387,6 +398,12 @@ class LocomotionVelocityRoughEnvCfg(ManagerBasedRLEnvCfg):
         #     self.scene.contact_forces_base.update_period = self.sim.dt
         if self.scene.contact_forces is not None:
             self.scene.contact_forces.update_period = self.sim.dt
+        if self.scene.contact_forces_base is not None:
+            self.scene.contact_forces_base.update_period = self.sim.dt
+        if self.scene.contact_forces_tibia is not None:
+            self.scene.contact_forces_tibia.update_period = self.sim.dt
+        if self.scene.contact_forces_thigh is not None:
+            self.scene.contact_forces_thigh.update_period = self.sim.dt
 
         # check if terrain levels curriculum is enabled - if so, enable curriculum for terrain generator
         # this generates terrains with increasing difficulty and is useful for training
